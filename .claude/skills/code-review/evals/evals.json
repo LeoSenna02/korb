@@ -1,0 +1,23 @@
+{
+  "skill_name": "code-review",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Revise toda a estrutura de código do meu projeto, cada arquivo, cada página, cada endpoint, cada lógica. Escreva um arquivo QUESTIONS.md com todas as perguntas arquiteturais, de refatoração e técnicas que você achar estranhas ou sobre as quais precise de mais informações.",
+      "expected_output": "Arquivo QUESTIONS.md com perguntas categorizadas sobre arquitetura, bugs, segurança, performance e boas práticas",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "Faça uma auditoria completa do meu código. Preciso entender o que este projeto faz, o que ele falta em termos de desempenho, arquitetura e segurança. Identifique falhas, problemas, bugs e sugestões de melhoria.",
+      "expected_output": "Análise completa do codebase com sumário executivo e arquivo QUESTIONS.md detalhado",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "Aja como um líder técnico sênior e faça code review completo. Revise a autenticação, API routes, frontend, padrões arquiteturais, performance e segurança. Liste todas as questões em QUESTIONS.md.",
+      "expected_output": "QUESTIONS.md com seções para cada categoria de análise técnica",
+      "files": []
+    }
+  ]
+}
