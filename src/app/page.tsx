@@ -1,65 +1,93 @@
-import Image from "next/image";
+import Link from "next/link";
+import { Baby, Droplets, Moon, Scale, ArrowRight } from "lucide-react";
 
-export default function Home() {
+const features = [
+  {
+    icon: Droplets,
+    title: "Mamadas",
+    description: "Controle peito, mamadeira e água. Sem adivinhar quando foi a última.",
+  },
+  {
+    icon: Moon,
+    title: "Trocas",
+    description: "Registre fraldas molhadas e sujas. Acompanha a frequência.",
+  },
+  {
+    icon: Moon,
+    title: "Sono",
+    description: "Cronometre sonecas e sono noturno. Resgate a memória do sono.",
+  },
+  {
+    icon: Scale,
+    title: "Crescimento",
+    description: "Peso, altura e cefalia. Gráficos que mostram cada marco.",
+  },
+];
+
+export default function Onboarding() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <main className="min-h-screen bg-surface-dim flex flex-col">
+      {/* ─── Hero Section ─── */}
+      <section className="flex-1 flex flex-col items-center justify-center px-6 pt-16 pb-12">
+        {/* App Icon */}
+        <div className="w-20 h-20 rounded-full bg-surface-container flex items-center justify-center mb-8">
+          <Baby className="w-10 h-10 text-primary" strokeWidth={1.5} />
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+
+        {/* Title */}
+        <h1 className="font-display text-4xl text-text-primary mb-3 text-center">
+          Korb
+        </h1>
+
+        {/* Tagline */}
+        <p className="font-data text-base text-text-secondary text-center max-w-xs leading-relaxed">
+          A calma que você precisa, às 3 da manhã.
+        </p>
+      </section>
+
+      {/* ─── Features Grid ─── */}
+      <section className="px-6 pb-8">
+        <div className="grid grid-cols-1 gap-4">
+          {features.map((feature, index) => {
+            const Icon = feature.icon;
+            return (
+              <article
+                key={index}
+                className="bg-surface-container rounded-2xl p-5 flex items-start gap-4"
+              >
+                {/* Icon Container */}
+                <div className="w-11 h-11 rounded-xl bg-surface-container-high flex items-center justify-center flex-shrink-0">
+                  <Icon
+                    className="w-5 h-5 text-text-secondary"
+                    strokeWidth={1.5}
+                  />
+                </div>
+
+                {/* Content */}
+                <div className="flex-1 min-w-0">
+                  <h2 className="font-display text-lg text-text-primary mb-1">
+                    {feature.title}
+                  </h2>
+                  <p className="font-data text-sm text-text-secondary leading-relaxed">
+                    {feature.description}
+                  </p>
+                </div>
+              </article>
+            );
+          })}
         </div>
-      </main>
-    </div>
+      </section>
+
+      {/* ─── CTA Section ─── */}
+      <section className="px-6 pb-10 pt-4">
+        <Link
+          href="/login"
+          className="w-full h-14 bg-primary-container text-on-primary-container rounded-xl font-display text-base font-medium flex items-center justify-center gap-2 transition-all duration-200 hover:bg-primary active:scale-[0.98]"
+        >
+          Começar
+          <ArrowRight className="w-5 h-5" strokeWidth={1.5} />
+        </Link>
+      </section>
+    </main>
   );
 }

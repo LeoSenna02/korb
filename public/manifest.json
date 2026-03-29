@@ -1,0 +1,47 @@
+{
+  "name": "Korb — Rastreie a rotina do seu bebê",
+  "short_name": "Korb",
+  "description": "Registre mamadas, trocas de fralda, sono e crescimento do seu bebê. Simples, offline, para pais exaustos.",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#111319",
+  "theme_color": "#111319",
+  "orientation": "portrait",
+  "scope": "/",
+  "lang": "pt-BR",
+  "categories": ["health", "lifestyle", "family"],
+  "icons": [
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/assets/screenshots/dashboard.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "label": "Dashboard do Korb"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Registrar Mamada",
+      "short_name": "Mamada",
+      "description": "Registrar uma nova mamada",
+      "url": "/dashboard?action=feeding",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Registrar Sono",
+      "short_name": "Sono",
+      "description": "Iniciar timer de sono",
+      "url": "/dashboard?action=sleep",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ],
+  "related_applications": [],
+  "prefer_related_applications": false
+}

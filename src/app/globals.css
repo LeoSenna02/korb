@@ -1,26 +1,322 @@
 @import "tailwindcss";
 
+/* ═══════════════════════════════════════════════════════════════
+   KORB — DESIGN TOKENS: Serenidade em Dados
+   Baseado em: .claude/rules/design-system.md
+   ═══════════════════════════════════════════════════════════════ */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* ─── Superfícies (Hierarquia de Profundidade) ─── */
+  --surface-dim: #111319;
+  --surface-container-low: #191B22;
+  --surface-container: #1E1F26;
+  --surface-container-high: #282A33;
+  --surface-container-highest: #33343B;
+  --surface-variant: #3A3B42;
+
+  /* ─── Cores Primárias (Sage Green) ─── */
+  --primary: #7B9E87;
+  --primary-container: #7B9E87;
+  --on-primary: #0A1A0D;
+  --on-primary-container: #E8F0EA;
+
+  /* ─── Cores Secundárias (Warm Brown) ─── */
+  --secondary: #7A5F3A;
+  --secondary-container: #584325;
+  --on-secondary: #2B1F0C;
+  --on-secondary-container: #E8D9C0;
+
+  /* ─── Cores Terciárias (Gentle Alert — sem vermelho puro) ─── */
+  --tertiary: #B87575;
+  --tertiary-container: #CD8282;
+  --on-tertiary: #2B1010;
+  --on-tertiary-container: #FAE8E8;
+
+  /* ─── Texto ─── */
+  --text-primary: #E3E2E6;
+  --text-secondary: #C4C3C7;
+  --text-disabled: #6B6B73;
+  --text-placeholder: #7A7A83;
+
+  /* ─── Bordas e Contornos ─── */
+  --outline: #4A4B53;
+  --outline-variant: rgba(78, 80, 89, 0.15); /* Ghost Border — 15% opacity */
+
+  /* ─── Erro / Estados Destrutivos ─── */
+  --error: #CF6679;
+  --error-container: #CD8282; /* Usa tertiary_container para alertas suaves */
+
+  /* ─── Elevação / Sombras ─── */
+  --shadow-color: #0D0E12;
+  --shadow-ambient: 0 4px 32px rgba(13, 14, 18, 0.08);
+  --shadow-elevated: 0 8px 48px rgba(13, 14, 18, 0.16);
+
+  /* ─── Sombras de Hover / Botões (Camadas Ultra-suaves) ─── */
+  --shadow-btn-primary: 
+    0 2px 4px rgba(123, 158, 135, 0.08),
+    0 4px 8px rgba(123, 158, 135, 0.12),
+    0 12px 24px rgba(13, 14, 18, 0.3);
+    
+  --shadow-btn-secondary: 
+    0 2px 4px rgba(122, 95, 58, 0.08),
+    0 4px 8px rgba(122, 95, 58, 0.12),
+    0 12px 24px rgba(13, 14, 18, 0.3);
+
+  --shadow-btn-ghost: 
+    0 4px 12px rgba(0, 0, 0, 0.25),
+    0 1px 3px rgba(0, 0, 0, 0.15);
+
+  /* ─── Glassmorphism ─── */
+  --glass-bg: rgba(58, 59, 66, 0.6);
+  --glass-blur: 16px;
+
+  /* ─── Espaçamento (8px Grid) ─── */
+  --spacing-1: 0.25rem;  /* 4px */
+  --spacing-2: 0.5rem;   /* 8px */
+  --spacing-3: 0.75rem;  /* 12px */
+  --spacing-4: 1rem;     /* 16px */
+  --spacing-5: 1.25rem;  /* 20px */
+  --spacing-6: 1.5rem;   /* 24px */
+  --spacing-8: 2rem;     /* 32px */
+  --spacing-10: 2.5rem; /* 40px */
+  --spacing-12: 3rem;   /* 48px */
+  --spacing-16: 4rem;   /* 64px */
+
+  /* ─── Border Radius ─── */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-full: 999px;
+
+  /* ─── Transições ─── */
+  --transition-fast: 150ms ease;
+  --transition-base: 200ms ease;
+  --transition-slow: 300ms ease;
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   TAILWIND THEME (v4 CSS-first)
+   Mapeia CSS vars → utilitários Tailwind
+   ═══════════════════════════════════════════════════════════════ */
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* ─── Cores ─── */
+  --color-surface-dim: var(--surface-dim);
+  --color-surface-container-low: var(--surface-container-low);
+  --color-surface-container: var(--surface-container);
+  --color-surface-container-high: var(--surface-container-high);
+  --color-surface-container-highest: var(--surface-container-highest);
+  --color-surface-variant: var(--surface-variant);
+
+  --color-primary: var(--primary);
+  --color-primary-container: var(--primary-container);
+  --color-on-primary: var(--on-primary);
+  --color-on-primary-container: var(--on-primary-container);
+
+  --color-secondary: var(--secondary);
+  --color-secondary-container: var(--secondary-container);
+  --color-on-secondary: var(--on-secondary);
+  --color-on-secondary-container: var(--on-secondary-container);
+
+  --color-tertiary: var(--tertiary);
+  --color-tertiary-container: var(--tertiary-container);
+  --color-on-tertiary: var(--on-tertiary);
+  --color-on-tertiary-container: var(--on-tertiary-container);
+
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-disabled: var(--text-disabled);
+  --color-text-placeholder: var(--text-placeholder);
+
+  --color-outline: var(--outline);
+  --color-outline-variant: var(--outline-variant);
+
+  --color-error: var(--error);
+  --color-error-container: var(--error-container);
+
+  /* ─── Fontes ─── */
+  --font-sans: var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-dm-mono), ui-monospace, monospace;
+
+  /* ─── Espaçamento ─── */
+  --spacing-1: var(--spacing-1);
+  --spacing-2: var(--spacing-2);
+  --spacing-3: var(--spacing-3);
+  --spacing-4: var(--spacing-4);
+  --spacing-5: var(--spacing-5);
+  --spacing-6: var(--spacing-6);
+  --spacing-8: var(--spacing-8);
+  --spacing-10: var(--spacing-10);
+  --spacing-12: var(--spacing-12);
+  --spacing-16: var(--spacing-16);
+
+  /* ─── Border Radius ─── */
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
+  --radius-full: var(--radius-full);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* ═══════════════════════════════════════════════════════════════
+   BASE STYLES
+   ═══════════════════════════════════════════════════════════════ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--surface-dim);
+  color: var(--text-primary);
+  font-family: var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  min-height: 100dvh;
+}
+
+/* ─── Scrollbar personalizada (WebKit) ─── */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--surface-container-low);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--surface-variant);
+  border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--outline);
+}
+
+/* ─── Seleção de texto ─── */
+::selection {
+  background-color: var(--primary-container);
+  color: var(--on-primary-container);
+}
+
+/* ─── Focus visível (Suave e Arredondado) ─── */
+:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--surface-dim), 0 0 0 4px var(--primary);
+  border-radius: inherit;
+}
+
+/* ─── Inputs sem borda padrão ─── */
+input,
+textarea,
+select {
+  font-family: inherit;
+  color: inherit;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--text-placeholder);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   GLASSMORPHISM UTILITY CLASS
+   ═══════════════════════════════════════════════════════════════ */
+
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--outline-variant);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   BUTTON HOVER GLOW — Sombra difusiva por variante
+   ═══════════════════════════════════════════════════════════════ */
+
+.btn-glow-primary:hover:not(:disabled) {
+  box-shadow: var(--shadow-btn-primary);
+}
+
+.btn-glow-secondary:hover:not(:disabled) {
+  box-shadow: var(--shadow-btn-secondary);
+}
+
+.btn-glow-ghost:hover:not(:disabled) {
+  box-shadow: var(--shadow-btn-ghost);
+}
+
+/* Versões fixas para estados ativos/selecionados */
+.glow-primary {
+  box-shadow: var(--shadow-btn-primary);
+}
+
+.glow-secondary {
+  box-shadow: var(--shadow-btn-secondary);
+}
+
+.glow-ghost {
+  box-shadow: var(--shadow-btn-ghost);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   TYPOGRAPHY HELPERS
+   ═══════════════════════════════════════════════════════════════ */
+
+.font-display {
+  font-family: var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.font-data {
+  font-family: var(--font-dm-mono), ui-monospace, monospace;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   LOADING SCREEN ANIMATIONS
+   ═══════════════════════════════════════════════════════════════ */
+
+@keyframes breathe {
+  0%, 100% {
+    transform: scale(0.85);
+    opacity: 0.4;
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 0.8;
+  }
+}
+
+@keyframes dot-pulse {
+  0%, 80%, 100% {
+    opacity: 0.2;
+    transform: scale(0.8);
+  }
+  40% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
