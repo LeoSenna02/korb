@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth/hooks";
 import { useBaby } from "@/contexts/BabyContext";
@@ -10,8 +10,6 @@ import { DraggableTimer } from "@/features/dashboard/components/DraggableTimer";
 import { FeedingTimerProvider } from "@/features/dashboard/hooks/useFeedingTimer";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
 
-const MIN_LOADING_MS = 2500;
-
 export default function DashboardLayout({
   children,
 }: {
@@ -20,13 +18,6 @@ export default function DashboardLayout({
   const { isAuthenticated, isHydrated: authHydrated } = useAuth();
   const { baby, isHydrated: babyHydrated } = useBaby();
   const router = useRouter();
-
-  const [minimumDelayPassed, setMinimumDelayPassed] = useState(false);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setMinimumDelayPassed(true), MIN_LOADING_MS);
-    return () => clearTimeout(timer);
-  }, []);
 
   useEffect(() => {
     if (authHydrated && !isAuthenticated) {
@@ -40,7 +31,7 @@ export default function DashboardLayout({
 
   const dataReady = authHydrated && babyHydrated;
 
-  if (!dataReady || !minimumDelayPassed) {
+  if (!dataReady) {
     return <LoadingScreen />;
   }
 

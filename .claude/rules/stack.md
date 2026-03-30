@@ -88,7 +88,31 @@ Se eu pedir algo que viole uma regra, avise primeiro e sugira a forma correta.
 
 ---
 
-### 8. Clean Code
+### 8. Formatação de Datas (OBRIGATÓRIO)
+
+**Para TODAS as datas visíveis ao usuário, usar `formatDate` de `@/lib/utils/format`:**
+
+```typescript
+import { formatDate } from "@/lib/utils/format";
+
+// ✅ CORRETO — usa timezone America/Sao_Paulo
+const dataFormatada = formatDate(record.actualDate);
+
+// ❌ ERRADO — causa bug de timezone em fusos diferentes
+const dataErrada = new Date(dateStr).toLocaleDateString("pt-BR");
+```
+
+**Por que:** `new Date("2026-03-29")` é interpretado como UTC, não local. Em fusos como Brasil (GMT-3), vira o dia anterior.
+
+**Funções disponíveis em `format.ts`:**
+- `formatDate(isoString)` → "29/03/2026" (com timezone)
+- `formatDateLong(isoString)` → "29 de março de 2026"
+- `formatTime(isoString)` → "14:30"
+- `timeAgo(dateStr)` → "há 2h", "ontem", etc.
+
+---
+
+### 9. Clean Code
 - Nomes descritivos: funções como verbos (`fetchUser`, `handleSubmit`),
   componentes como substantivos (`UserCard`, `ProductList`).
 - Comentários apenas onde a lógica for complexa e não autoexplicativa.
@@ -98,7 +122,7 @@ Se eu pedir algo que viole uma regra, avise primeiro e sugira a forma correta.
 
 ---
 
-### 9. Componentes Reutilizáveis
+### 10. Componentes Reutilizáveis
 - Componentes genéricos em `/components/` com props bem tipadas.
 - Componentes de domínio em `/features/[feature]/components/`.
 - Exporte sempre como named export (evite default export em componentes).
@@ -106,7 +130,7 @@ Se eu pedir algo que viole uma regra, avise primeiro e sugira a forma correta.
 
 ---
 
-### 10. Formato de Resposta (sempre siga esta ordem)
+### 11. Formato de Resposta (sempre siga esta ordem)
 
 1. **Decisões arquiteturais** — bullets explicando o raciocínio.
 2. **Estrutura de arquivos** — árvore de pastas com todos os arquivos que serão criados/alterados.

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback, createContext, useContext } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo, createContext, useContext } from "react";
 
 const STORAGE_KEY = "korb_feeding_state";
 
@@ -136,18 +136,21 @@ export function FeedingTimerProvider({ children }: { children: React.ReactNode }
     setActiveSide((prev) => (prev === "left" ? "right" : "left"));
   }, []);
 
-  const value: FeedingTimerContextValue = {
-    leftSeconds,
-    rightSeconds,
-    activeSide,
-    isActive,
-    startedAt,
-    start,
-    pause,
-    resume,
-    reset,
-    switchSide,
-  };
+  const value = useMemo<FeedingTimerContextValue>(
+    () => ({
+      leftSeconds,
+      rightSeconds,
+      activeSide,
+      isActive,
+      startedAt,
+      start,
+      pause,
+      resume,
+      reset,
+      switchSide,
+    }),
+    [leftSeconds, rightSeconds, activeSide, isActive, startedAt, start, pause, resume, reset, switchSide]
+  );
 
   return (
     <FeedingTimerContext.Provider value={value}>

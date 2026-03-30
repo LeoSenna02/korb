@@ -18,18 +18,24 @@ export async function saveSleep(
 export async function getSleepsByBabyId(babyId: string): Promise<SleepRecord[]> {
   const db = await getDB();
   const tx = db.transaction("sleeps");
-  const index = tx.store.index("byBabyId");
-  const all = await index.getAll(babyId);
-  return all.sort(
-    (a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime()
-  );
+  const index = tx.store.index("byBabyIdAndCreated");
+  const range = IDBKeyRange.bound([babyId, ""], [babyId, "\uffff"]);
+  const all = await index.getAll(range);
+  return all.sort((a, b) => b.startedAt.localeCompare(a.startedAt));
 }
 
 export async function getTodaySleepRecords(babyId: string): Promise<SleepRecord[]> {
-  const all = await getSleepsByBabyId(babyId);
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  return all.filter((r) => new Date(r.startedAt) >= today && r.endedAt != null);
+  const db = await getDB();
+  const tx = db.transaction("sleeps");
+  const index = tx.store.index("byBabyIdAndStarted");
+  const range = IDBKeyRange.bound(
+    [babyId, today.toISOString()],
+    [babyId, new Date().toISOString()]
+  );
+  const all = await index.getAll(range);
+  return all.filter((r) => r.endedAt != null);
 }
 
 export async function getTotalSleepSecondsToday(babyId: string): Promise<number> {

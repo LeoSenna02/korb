@@ -27,12 +27,15 @@ interface BabyProviderProps {
 }
 
 export function BabyProvider({ children }: BabyProviderProps) {
-  const { user, isAuthenticated } = useAuthContext();
+  const { user, isAuthenticated, isHydrated: authHydrated } = useAuthContext();
   const [baby, setBaby] = useState<Baby | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
 
   useEffect(() => {
+    // Se o auth ainda não hidratou, não fazemos nada no baby context
+    if (!authHydrated) return;
+
     if (!isAuthenticated || !user) {
       setBaby(null);
       setIsHydrated(true);
@@ -64,7 +67,7 @@ export function BabyProvider({ children }: BabyProviderProps) {
     return () => {
       cancelled = true;
     };
-  }, [isAuthenticated, user]);
+  }, [authHydrated, isAuthenticated, user]);
 
   const refreshBaby = useCallback(async () => {
     if (!user) return;

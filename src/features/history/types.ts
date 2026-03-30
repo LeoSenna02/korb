@@ -9,6 +9,8 @@ export interface HistoryActivity {
   date: string;
   /** Format: HH:mm for display */
   time: string;
+  /** ISO string for sorting (not formatted) */
+  sortKey: string;
   duration?: string;
   isOngoing?: boolean;
 }

@@ -9,6 +9,7 @@ import { getFeedingsByBabyId } from "./feeding";
 import { getDiapersByBabyId } from "./diaper";
 import { getSleepsByBabyId } from "./sleep";
 import { getGrowthByBabyId } from "./growth";
+import { getReportFeedings, getReportSleeps, getReportDiapers } from "./reports";
 import { formatDate, formatTime, formatDuration, formatDurationFromDates } from "@/lib/utils/format";
 
 function formatFeedingActivity(r: FeedingRecord): HistoryActivity {
@@ -41,6 +42,7 @@ function formatFeedingActivity(r: FeedingRecord): HistoryActivity {
     details: details || "Amamentação",
     date: formatDate(r.startedAt),
     time: formatTime(r.startedAt),
+    sortKey: r.startedAt,
     duration: r.durationSeconds ? formatDuration(r.durationSeconds) : undefined,
   };
 }
@@ -61,6 +63,7 @@ function formatDiaperActivity(r: DiaperRecord): HistoryActivity {
     details,
     date: formatDate(r.changedAt),
     time: formatTime(r.changedAt),
+    sortKey: r.changedAt,
   };
 }
 
@@ -75,6 +78,7 @@ function formatSleepActivity(r: SleepRecord): HistoryActivity {
     details,
     date: formatDate(r.startedAt),
     time: formatTime(r.startedAt),
+    sortKey: r.startedAt,
     duration: r.endedAt ? formatDurationFromDates(r.startedAt, r.endedAt) : undefined,
     isOngoing: !r.endedAt,
   };
@@ -94,6 +98,7 @@ function formatGrowthActivity(r: GrowthRecord): HistoryActivity {
     details: parts.length > 0 ? parts.join(" / ") : "Registro de crescimento",
     date: formatDate(r.measuredAt),
     time: formatTime(r.measuredAt),
+    sortKey: r.measuredAt,
   };
 }
 
@@ -114,11 +119,7 @@ export async function getAllActivitiesForHistory(
     ...growth.map(formatGrowthActivity),
   ];
 
-  activities.sort((a, b) => {
-    const dateA = new Date(a.date.split("/").reverse().join("-") + "T" + a.time);
-    const dateB = new Date(b.date.split("/").reverse().join("-") + "T" + b.time);
-    return dateB.getTime() - dateA.getTime();
-  });
+  activities.sort((a, b) => b.sortKey.localeCompare(a.sortKey));
 
   return activities;
 }
@@ -126,40 +127,27 @@ export async function getAllActivitiesForHistory(
 export async function getWeeklyStats(
   babyId: string
 ): Promise<WeeklyStat[]> {
-  const oneWeekAgo = new Date();
+  const now = new Date();
+  const oneWeekAgo = new Date(now);
   oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
   oneWeekAgo.setHours(0, 0, 0, 0);
 
-  const [feedings, sleeps, diapers] = await Promise.all([
-    getFeedingsByBabyId(babyId),
-    getSleepsByBabyId(babyId),
-    getDiapersByBabyId(babyId),
+  const [thisWeekFeedings, thisWeekSleeps, thisWeekDiapers] = await Promise.all([
+    getReportFeedings(babyId, oneWeekAgo, now),
+    getReportSleeps(babyId, oneWeekAgo, now),
+    getReportDiapers(babyId, oneWeekAgo, now),
   ]);
 
-  const thisWeekFeedings = feedings.filter(
-    (f) => new Date(f.createdAt) >= oneWeekAgo
-  );
+  const completedSleeps = thisWeekSleeps.filter((s) => s.endedAt);
 
-  const thisWeekSleeps = sleeps.filter(
-    (s) => new Date(s.startedAt) >= oneWeekAgo && s.endedAt
-  );
-
-  const totalSleepSeconds = thisWeekSleeps.reduce((acc, s) => {
-    if (!s.endedAt) return acc;
-    return (
-      acc +
-      (new Date(s.endedAt).getTime() - new Date(s.startedAt).getTime()) / 1000
-    );
+  const totalSleepSeconds = completedSleeps.reduce((acc, s) => {
+    return acc + (new Date(s.endedAt!).getTime() - new Date(s.startedAt).getTime()) / 1000;
   }, 0);
 
   const avgSleepHoursPerDay =
-    thisWeekSleeps.length > 0
+    completedSleeps.length > 0
       ? (totalSleepSeconds / 3600 / 7).toFixed(1)
       : "0";
-
-  const thisWeekDiapers = diapers.filter(
-    (d) => new Date(d.createdAt) >= oneWeekAgo
-  );
 
   return [
     {

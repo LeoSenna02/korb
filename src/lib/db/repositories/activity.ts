@@ -1,16 +1,18 @@
-import type { ActivityRecord, FeedingRecord, DiaperRecord, GrowthRecord } from "../types";
-import { getDB } from "../index";
+import type { ActivityRecord } from "../types";
+import { getRecentFeedings } from "./feeding";
+import { getRecentDiapers } from "./diaper";
+import { getRecentGrowthRecords } from "./growth";
 
 export async function getRecentActivities(
   babyId: string,
   limit: number
 ): Promise<ActivityRecord[]> {
-  const db = await getDB();
+  const fetchCount = Math.min(limit * 3, 50);
 
   const [feedings, diapers, growth] = await Promise.all([
-    db.getAllFromIndex("feedings", "byBabyId", babyId) as Promise<FeedingRecord[]>,
-    db.getAllFromIndex("diapers", "byBabyId", babyId) as Promise<DiaperRecord[]>,
-    db.getAllFromIndex("growth", "byBabyId", babyId) as Promise<GrowthRecord[]>,
+    getRecentFeedings(babyId, fetchCount),
+    getRecentDiapers(babyId, fetchCount),
+    getRecentGrowthRecords(babyId, fetchCount),
   ]);
 
   const activities: ActivityRecord[] = [
@@ -19,9 +21,6 @@ export async function getRecentActivities(
     ...growth.map((r) => ({ ...r, activityType: "growth" as const })),
   ];
 
-  activities.sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-  );
-
+  activities.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   return activities.slice(0, limit);
 }

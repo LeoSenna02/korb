@@ -18,17 +18,25 @@ export async function saveFeeding(
 export async function getFeedingsByBabyId(babyId: string): Promise<FeedingRecord[]> {
   const db = await getDB();
   const tx = db.transaction("feedings");
-  const index = tx.store.index("byBabyId");
-  const all = await index.getAll(babyId);
-  return all.sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-  );
+  const index = tx.store.index("byBabyIdAndCreated");
+  const range = IDBKeyRange.bound([babyId, ""], [babyId, "\uffff"]);
+  const all = await index.getAll(range);
+  return all.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
 
 export async function getRecentFeedings(
   babyId: string,
   limit: number
 ): Promise<FeedingRecord[]> {
-  const all = await getFeedingsByBabyId(babyId);
-  return all.slice(0, limit);
+  const db = await getDB();
+  const tx = db.transaction("feedings");
+  const index = tx.store.index("byBabyIdAndCreated");
+  const range = IDBKeyRange.bound([babyId, ""], [babyId, "\uffff"]);
+  const results: FeedingRecord[] = [];
+  let cursor = await index.openCursor(range, "prev");
+  while (cursor && results.length < limit) {
+    results.push(cursor.value);
+    cursor = await cursor.continue();
+  }
+  return results;
 }

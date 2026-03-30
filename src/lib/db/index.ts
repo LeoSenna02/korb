@@ -1,41 +1,78 @@
 import { openDB, type IDBPDatabase } from "idb";
 
 const DB_NAME = "korb-db";
-const DB_VERSION = 3;
+const DB_VERSION = 5;
 
 let dbPromise: Promise<IDBPDatabase> | null = null;
 
 export function getDB(): Promise<IDBPDatabase> {
   if (!dbPromise) {
     dbPromise = openDB(DB_NAME, DB_VERSION, {
-      upgrade(db) {
+      upgrade(db, oldVersion, _newVersion, tx) {
         if (!db.objectStoreNames.contains("babies")) {
-          const babyStore = db.createObjectStore("babies", { keyPath: "id" });
-          babyStore.createIndex("byUserId", "userId", { unique: true });
+          const s = db.createObjectStore("babies", { keyPath: "id" });
+          s.createIndex("byUserId", "userId", { unique: true });
         }
 
         if (!db.objectStoreNames.contains("feedings")) {
-          const feedingStore = db.createObjectStore("feedings", { keyPath: "id" });
-          feedingStore.createIndex("byBabyId", "babyId");
-          feedingStore.createIndex("byCreatedAt", "createdAt");
+          const s = db.createObjectStore("feedings", { keyPath: "id" });
+          s.createIndex("byBabyId", "babyId");
+          s.createIndex("byCreatedAt", "createdAt");
+          s.createIndex("byBabyIdAndCreated", ["babyId", "createdAt"]);
+          s.createIndex("byBabyIdAndStarted", ["babyId", "startedAt"]);
+        } else if (oldVersion > 0 && oldVersion < 5 && tx) {
+          const s = tx.objectStore("feedings");
+          if (!s.indexNames.contains("byBabyIdAndCreated")) s.createIndex("byBabyIdAndCreated", ["babyId", "createdAt"]);
+          if (!s.indexNames.contains("byBabyIdAndStarted")) s.createIndex("byBabyIdAndStarted", ["babyId", "startedAt"]);
         }
 
         if (!db.objectStoreNames.contains("diapers")) {
-          const diaperStore = db.createObjectStore("diapers", { keyPath: "id" });
-          diaperStore.createIndex("byBabyId", "babyId");
-          diaperStore.createIndex("byCreatedAt", "createdAt");
+          const s = db.createObjectStore("diapers", { keyPath: "id" });
+          s.createIndex("byBabyId", "babyId");
+          s.createIndex("byCreatedAt", "createdAt");
+          s.createIndex("byBabyIdAndCreated", ["babyId", "createdAt"]);
+          s.createIndex("byBabyIdAndChanged", ["babyId", "changedAt"]);
+        } else if (oldVersion > 0 && oldVersion < 5 && tx) {
+          const s = tx.objectStore("diapers");
+          if (!s.indexNames.contains("byBabyIdAndCreated")) s.createIndex("byBabyIdAndCreated", ["babyId", "createdAt"]);
+          if (!s.indexNames.contains("byBabyIdAndChanged")) s.createIndex("byBabyIdAndChanged", ["babyId", "changedAt"]);
         }
 
         if (!db.objectStoreNames.contains("growth")) {
-          const growthStore = db.createObjectStore("growth", { keyPath: "id" });
-          growthStore.createIndex("byBabyId", "babyId");
-          growthStore.createIndex("byCreatedAt", "createdAt");
+          const s = db.createObjectStore("growth", { keyPath: "id" });
+          s.createIndex("byBabyId", "babyId");
+          s.createIndex("byCreatedAt", "createdAt");
+          s.createIndex("byBabyIdAndCreated", ["babyId", "createdAt"]);
+          s.createIndex("byBabyIdAndMeasured", ["babyId", "measuredAt"]);
+        } else if (oldVersion > 0 && oldVersion < 5 && tx) {
+          const s = tx.objectStore("growth");
+          if (!s.indexNames.contains("byBabyIdAndCreated")) s.createIndex("byBabyIdAndCreated", ["babyId", "createdAt"]);
+          if (!s.indexNames.contains("byBabyIdAndMeasured")) s.createIndex("byBabyIdAndMeasured", ["babyId", "measuredAt"]);
         }
 
         if (!db.objectStoreNames.contains("sleeps")) {
-          const sleepStore = db.createObjectStore("sleeps", { keyPath: "id" });
-          sleepStore.createIndex("byBabyId", "babyId");
-          sleepStore.createIndex("byCreatedAt", "createdAt");
+          const s = db.createObjectStore("sleeps", { keyPath: "id" });
+          s.createIndex("byBabyId", "babyId");
+          s.createIndex("byCreatedAt", "createdAt");
+          s.createIndex("byBabyIdAndCreated", ["babyId", "createdAt"]);
+          s.createIndex("byBabyIdAndStarted", ["babyId", "startedAt"]);
+        } else if (oldVersion > 0 && oldVersion < 5 && tx) {
+          const s = tx.objectStore("sleeps");
+          if (!s.indexNames.contains("byBabyIdAndCreated")) s.createIndex("byBabyIdAndCreated", ["babyId", "createdAt"]);
+          if (!s.indexNames.contains("byBabyIdAndStarted")) s.createIndex("byBabyIdAndStarted", ["babyId", "startedAt"]);
+        }
+
+        if (!db.objectStoreNames.contains("milestones")) {
+          const s = db.createObjectStore("milestones", { keyPath: "id" });
+          s.createIndex("byBabyId", "babyId");
+          s.createIndex("byCategory", "category");
+          s.createIndex("byCreatedAt", "createdAt");
+          s.createIndex("byBabyIdAndCreated", ["babyId", "createdAt"]);
+          s.createIndex("byBabyIdAndCategory", ["babyId", "category"]);
+        } else if (oldVersion > 0 && oldVersion < 5 && tx) {
+          const s = tx.objectStore("milestones");
+          if (!s.indexNames.contains("byBabyIdAndCreated")) s.createIndex("byBabyIdAndCreated", ["babyId", "createdAt"]);
+          if (!s.indexNames.contains("byBabyIdAndCategory")) s.createIndex("byBabyIdAndCategory", ["babyId", "category"]);
         }
       },
     });

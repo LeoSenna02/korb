@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { Check } from "lucide-react";
 import { Sheet } from "@/components/ui/Sheet";
 import { BloodTypeSelector } from "@/components/ui/BloodTypeSelector";
+import { DateInput } from "@/components/ui/DateInput";
 import { useBaby } from "@/contexts/BabyContext";
 import type { BloodType } from "@/lib/db/types";
 
@@ -19,10 +20,14 @@ export function BabyEditSheet({ isOpen, onClose }: BabyEditSheetProps) {
   const [bloodType, setBloodType] = useState<BloodType | undefined>(
     baby?.bloodType
   );
+  const [birthDate, setBirthDate] = useState<string | undefined>(
+    baby?.birthDate
+  );
 
   useEffect(() => {
     if (isOpen && baby) {
       setBloodType(baby.bloodType);
+      setBirthDate(baby.birthDate);
     }
   }, [isOpen, baby]);
 
@@ -30,7 +35,7 @@ export function BabyEditSheet({ isOpen, onClose }: BabyEditSheetProps) {
     if (!baby) return;
     setIsSaving(true);
     try {
-      await updateBaby({ bloodType });
+      await updateBaby({ bloodType, birthDate });
       await refreshBaby();
       onClose();
     } catch (err) {
@@ -53,6 +58,13 @@ export function BabyEditSheet({ isOpen, onClose }: BabyEditSheetProps) {
         transition={{ duration: 0.3 }}
         className="space-y-8 pb-8"
       >
+        <DateInput
+          label="DATA DE NASCIMENTO"
+          name="birthDate"
+          initialValue={birthDate}
+          onChange={setBirthDate}
+        />
+
         <BloodTypeSelector
           label="TIPO SANGUÍNEO"
           name="bloodType"

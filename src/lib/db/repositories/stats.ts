@@ -1,8 +1,4 @@
 import { getDB } from "../index";
-import { getFeedingsByBabyId } from "./feeding";
-import { getSleepsByBabyId } from "./sleep";
-import { getDiapersByBabyId } from "./diaper";
-import { getGrowthByBabyId } from "./growth";
 
 export interface RecordCounts {
   totalFeedings: number;
@@ -12,17 +8,21 @@ export interface RecordCounts {
 }
 
 export async function getRecordCounts(babyId: string): Promise<RecordCounts> {
-  const [feedings, sleeps, diapers, growth] = await Promise.all([
-    getFeedingsByBabyId(babyId),
-    getSleepsByBabyId(babyId),
-    getDiapersByBabyId(babyId),
-    getGrowthByBabyId(babyId),
+  const db = await getDB();
+
+  const [txFeed, txSleep, txDiaper, txGrowth] = [
+    db.transaction("feedings"),
+    db.transaction("sleeps"),
+    db.transaction("diapers"),
+    db.transaction("growth"),
+  ];
+
+  const [totalFeedings, totalSleeps, totalDiapers, totalGrowth] = await Promise.all([
+    txFeed.store.index("byBabyId").count(babyId),
+    txSleep.store.index("byBabyId").count(babyId),
+    txDiaper.store.index("byBabyId").count(babyId),
+    txGrowth.store.index("byBabyId").count(babyId),
   ]);
 
-  return {
-    totalFeedings: feedings.length,
-    totalSleeps: sleeps.length,
-    totalDiapers: diapers.length,
-    totalGrowth: growth.length,
-  };
+  return { totalFeedings, totalSleeps, totalDiapers, totalGrowth };
 }

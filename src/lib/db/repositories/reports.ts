@@ -8,16 +8,13 @@ export async function getReportFeedings(
 ): Promise<FeedingRecord[]> {
   const db = await getDB();
   const tx = db.transaction("feedings");
-  const index = tx.store.index("byBabyId");
-  const all = await index.getAll(babyId);
-  const start = startDate.getTime();
-  const end = endDate.getTime();
-  return all
-    .filter((r) => {
-      const t = new Date(r.startedAt).getTime();
-      return t >= start && t <= end;
-    })
-    .sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime());
+  const index = tx.store.index("byBabyIdAndStarted");
+  const range = IDBKeyRange.bound(
+    [babyId, startDate.toISOString()],
+    [babyId, endDate.toISOString()]
+  );
+  const results = await index.getAll(range);
+  return results.sort((a, b) => b.startedAt.localeCompare(a.startedAt));
 }
 
 export async function getReportSleeps(
@@ -27,16 +24,13 @@ export async function getReportSleeps(
 ): Promise<SleepRecord[]> {
   const db = await getDB();
   const tx = db.transaction("sleeps");
-  const index = tx.store.index("byBabyId");
-  const all = await index.getAll(babyId);
-  const start = startDate.getTime();
-  const end = endDate.getTime();
-  return all
-    .filter((r) => {
-      const t = new Date(r.startedAt).getTime();
-      return t >= start && t <= end;
-    })
-    .sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime());
+  const index = tx.store.index("byBabyIdAndStarted");
+  const range = IDBKeyRange.bound(
+    [babyId, startDate.toISOString()],
+    [babyId, endDate.toISOString()]
+  );
+  const results = await index.getAll(range);
+  return results.sort((a, b) => b.startedAt.localeCompare(a.startedAt));
 }
 
 export async function getReportDiapers(
@@ -46,24 +40,20 @@ export async function getReportDiapers(
 ): Promise<DiaperRecord[]> {
   const db = await getDB();
   const tx = db.transaction("diapers");
-  const index = tx.store.index("byBabyId");
-  const all = await index.getAll(babyId);
-  const start = startDate.getTime();
-  const end = endDate.getTime();
-  return all
-    .filter((r) => {
-      const t = new Date(r.changedAt).getTime();
-      return t >= start && t <= end;
-    })
-    .sort((a, b) => new Date(b.changedAt).getTime() - new Date(a.changedAt).getTime());
+  const index = tx.store.index("byBabyIdAndChanged");
+  const range = IDBKeyRange.bound(
+    [babyId, startDate.toISOString()],
+    [babyId, endDate.toISOString()]
+  );
+  const results = await index.getAll(range);
+  return results.sort((a, b) => b.changedAt.localeCompare(a.changedAt));
 }
 
 export async function getReportGrowth(babyId: string): Promise<GrowthRecord[]> {
   const db = await getDB();
   const tx = db.transaction("growth");
-  const index = tx.store.index("byBabyId");
-  const all = await index.getAll(babyId);
-  return all.sort(
-    (a, b) => new Date(a.measuredAt).getTime() - new Date(b.measuredAt).getTime()
-  );
+  const index = tx.store.index("byBabyIdAndMeasured");
+  const range = IDBKeyRange.bound([babyId, ""], [babyId, "\uffff"]);
+  const results = await index.getAll(range);
+  return results.sort((a, b) => a.measuredAt.localeCompare(b.measuredAt));
 }

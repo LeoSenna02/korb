@@ -24,8 +24,8 @@ function groupActivitiesByDate(activities: HistoryActivity[]): HistoryGroup[] {
   };
 
   for (const activity of activities) {
-    const [day, month, year] = activity.date.split("/").map(Number);
-    const activityDate = new Date(year, month - 1, day, 23, 59, 59);
+    const activityDate = new Date(activity.sortKey);
+    activityDate.setHours(23, 59, 59, 999);
 
     if (activityDate >= today) {
       groups["Hoje"].push(activity);

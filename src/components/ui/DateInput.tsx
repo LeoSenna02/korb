@@ -7,6 +7,9 @@ interface DateInputProps {
   name?: string;
   error?: string;
   required?: boolean;
+  initialValue?: string; // ISO date string (YYYY-MM-DD)
+  onChange?: (isoDate: string) => void;
+  maxDate?: string; // ISO date string (YYYY-MM-DD), defaults to today
 }
 
 const MONTHS = [
@@ -16,19 +19,39 @@ const MONTHS = [
 
 const DAYS = Array.from({ length: 31 }, (_, i) => String(i + 1).padStart(2, "0"));
 const currentYear = new Date().getFullYear();
-const YEARS = Array.from({ length: 15 }, (_, i) => String(currentYear - 5 + i)); // -5 to +9
+const getYears = (maxYear: number) =>
+  Array.from({ length: maxYear - (currentYear - 5) + 1 }, (_, i) => String(currentYear - 5 + i));
 
 const ITEM_HEIGHT = 48; // h-12
 
 export const DateInput = forwardRef<HTMLDivElement, DateInputProps>(
-  ({ label, name, error, required }, ref) => {
+  ({ label, name, error, required, initialValue, onChange, maxDate }, ref) => {
     const today = new Date();
-    const [day, setDay] = useState(String(today.getDate()).padStart(2, "0"));
-    const [month, setMonth] = useState(MONTHS[today.getMonth()]);
-    const [year, setYear] = useState(String(today.getFullYear()));
+    const maxYear = maxDate
+      ? parseInt(maxDate.split("-")[0], 10)
+      : today.getFullYear();
+
+    // Parse initialValue if provided (ISO date string YYYY-MM-DD)
+    const parseInitial = (isoDate?: string) => {
+      if (!isoDate) return { day: String(today.getDate()).padStart(2, "0"), month: MONTHS[today.getMonth()], year: String(today.getFullYear()) };
+      const match = isoDate.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if (!match) return { day: String(today.getDate()).padStart(2, "0"), month: MONTHS[today.getMonth()], year: String(today.getFullYear()) };
+      const [, y, m, d] = match;
+      return { day: d, month: MONTHS[parseInt(m, 10) - 1], year: y };
+    };
+
+    const initial = parseInitial(initialValue);
+    const [day, setDay] = useState(initial.day);
+    const [month, setMonth] = useState(initial.month);
+    const [year, setYear] = useState(initial.year);
 
     const monthIndex = MONTHS.indexOf(month) + 1;
     const formattedDate = `${year}-${String(monthIndex).padStart(2, "0")}-${day}`;
+
+    // Notify parent when date changes
+    useEffect(() => {
+      onChange?.(formattedDate);
+    }, [formattedDate, onChange]);
 
     return (
       <div 
@@ -55,7 +78,7 @@ export const DateInput = forwardRef<HTMLDivElement, DateInputProps>(
           
           <ScrollWheel options={DAYS} value={day} onChange={setDay} widthClass="flex-1 z-10" />
           <ScrollWheel options={MONTHS} value={month} onChange={setMonth} widthClass="flex-[2] z-10" />
-          <ScrollWheel options={YEARS} value={year} onChange={setYear} widthClass="flex-1 z-10" />
+          <ScrollWheel options={getYears(maxYear)} value={year} onChange={setYear} widthClass="flex-1 z-10" />
         </div>
 
         <input type="hidden" name={name} value={formattedDate} id={name} />

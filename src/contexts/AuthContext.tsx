@@ -11,7 +11,7 @@ import { useRouter } from "next/navigation";
 import type { AuthResult, AuthError, Session, StoredUser } from "@/lib/auth/types";
 import type { LoginInput, RegisterInput } from "@/lib/auth/validation";
 import { login as serviceLogin, register as serviceRegister, logout as serviceLogout } from "@/lib/auth/service";
-import { getCurrentSession, getSessionUserData } from "@/lib/auth/storage";
+import { getCurrentSession, getSessionUserData, saveSessionUserData, clearSessionUserData, saveSession } from "@/lib/auth/storage";
 import { createAndSetSession, clearSessionCookie } from "@/lib/auth/actions/session";
 
 interface AuthContextValue {
@@ -57,6 +57,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
         const result = await serviceLogin(input.email, input.password);
         if ("success" in result && result.success === true) {
           await createAndSetSession(result.user.id, result.user.email, result.user.name);
+          // Persist for hydration after page reload
+          saveSessionUserData(result.user);
+          saveSession(result.session);
           setUser(result.user);
           setSession(result.session);
           router.push("/dashboard");
@@ -77,6 +80,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
         const result = await serviceRegister(input.name, input.email, input.password);
         if ("success" in result && result.success === true) {
           await createAndSetSession(result.user.id, result.user.email, result.user.name);
+          // Persist for hydration after page reload
+          saveSessionUserData(result.user);
+          saveSession(result.session);
           setUser(result.user);
           setSession(result.session);
           router.push("/baby");
@@ -93,6 +99,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const handleLogout = useCallback(() => {
     serviceLogout();
     clearSessionCookie();
+    clearSessionUserData();
     setUser(null);
     setSession(null);
     router.push("/login");
