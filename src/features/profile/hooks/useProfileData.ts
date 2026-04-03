@@ -8,6 +8,7 @@ import { getRecordCounts } from "@/lib/db/repositories/stats";
 import type { RecordCounts } from "@/lib/db/repositories/stats";
 import type { BabyProfile } from "../types";
 import type { Baby } from "@/lib/db/types";
+import type { DataStats } from "../types";
 
 function babyToProfile(baby: Baby): BabyProfile {
   return {
@@ -31,14 +32,8 @@ function calcTotalDays(birthDate: string): number {
 export interface UseProfileDataReturn {
   babyProfile: BabyProfile | null;
   user: { name: string; email: string } | null;
-  dataStats: {
-    totalFeedings: number;
-    totalSleeps: number;
-    totalDiapers: number;
-    totalGrowth: number;
-    totalDays: number;
-    lastBackup: string;
-  };
+  counts: RecordCounts;
+  dataStats: DataStats;
   isLoading: boolean;
   error: string | null;
   refresh: () => void;
@@ -111,10 +106,10 @@ export function useProfileData(): UseProfileDataReturn {
   return {
     babyProfile,
     user: userData,
+    counts,
     dataStats: {
       ...counts,
       totalDays,
-      lastBackup: "Nunca",
     },
     isLoading,
     error,

@@ -3,6 +3,7 @@ import { DM_Sans, DM_Mono } from "next/font/google";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { BabyProvider } from "@/contexts/BabyContext";
 import { SleepProvider } from "@/contexts/SleepContext";
+import { PWARegistrar } from "@/components/pwa/PWARegistrar";
 import "./globals.css";
 
 const dmSans = DM_Sans({
@@ -20,6 +21,7 @@ const dmMono = DM_Mono({
 });
 
 export const metadata: Metadata = {
+  applicationName: "Korb",
   title: {
     default: "Korb — Rastreie a rotina do seu bebê",
     template: "%s | Korb",
@@ -28,8 +30,13 @@ export const metadata: Metadata = {
     "Registre mamadas, trocas de fralda, sono e crescimento do seu bebê. Simples, offline, para pais exaustos.",
   manifest: "/manifest.json",
   icons: {
-    icon: "/favicon.svg",
+    icon: [
+      { url: "/favicon.svg", type: "image/svg+xml" },
+      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
     shortcut: "/favicon.svg",
+    apple: "/apple-touch-icon.png",
   },
   appleWebApp: {
     capable: true,
@@ -61,6 +68,7 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className="antialiased">
+        <PWARegistrar />
         <AuthProvider>
           <BabyProvider>
             <SleepProvider>

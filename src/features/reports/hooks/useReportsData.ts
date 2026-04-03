@@ -64,22 +64,25 @@ function getPeriodDates(period: ReportPeriod): {
   end: Date;
 } {
   const now = new Date();
-  const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  const day = now.getDate();
+  const end = new Date(Date.UTC(year, month, day, 23, 59, 59, 999));
   let start: Date;
   let prevStart: Date;
 
   switch (period) {
     case "day":
-      start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
-      prevStart = new Date(start.getTime() - 24 * 60 * 60 * 1000);
+      start = new Date(Date.UTC(year, month, day, 0, 0, 0, 0));
+      prevStart = new Date(Date.UTC(year, month, day - 1, 0, 0, 0, 0));
       break;
     case "week":
-      start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7, 0, 0, 0, 0);
-      prevStart = new Date(start.getTime() - 7 * 24 * 60 * 60 * 1000);
+      start = new Date(Date.UTC(year, month, day - 7, 0, 0, 0, 0));
+      prevStart = new Date(Date.UTC(year, month, day - 14, 0, 0, 0, 0));
       break;
     case "month":
-      start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 30, 0, 0, 0, 0);
-      prevStart = new Date(start.getTime() - 30 * 24 * 60 * 60 * 1000);
+      start = new Date(Date.UTC(year, month, day - 30, 0, 0, 0, 0));
+      prevStart = new Date(Date.UTC(year, month, day - 60, 0, 0, 0, 0));
       break;
     case "all":
       start = new Date(0);

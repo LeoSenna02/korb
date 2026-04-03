@@ -50,8 +50,8 @@ function getSleepPhrase(seconds: number, isNap: boolean): string {
 
 function RollingDigit({ digit }: { digit: string }) {
   return (
-    <span className="relative inline-flex overflow-hidden" style={{ height: "1cap" }}>
-      <span className="invisible">{digit}</span>
+    <span className="relative inline-flex h-[1em] items-center justify-center overflow-hidden align-middle leading-none">
+      <span className="invisible leading-none">{digit}</span>
       <AnimatePresence initial={false}>
         <motion.span
           key={digit}
@@ -59,7 +59,7 @@ function RollingDigit({ digit }: { digit: string }) {
           animate={{ y: "0%" }}
           exit={{ y: "-100%" }}
           transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
-          className="absolute inset-0 flex items-center justify-center"
+          className="absolute inset-0 flex items-center justify-center leading-none"
         >
           {digit}
         </motion.span>
@@ -72,14 +72,16 @@ function RollingTimer({ value }: { value: string }) {
   const parts = value.split(":");
 
   return (
-    <span className="inline-flex items-baseline">
+    <span className="inline-flex items-center align-middle leading-none">
       {parts.map((part, partIndex) => (
-        <span key={partIndex} className="inline-flex">
+        <span key={partIndex} className="inline-flex items-center leading-none">
           {part.split("").map((digit, digitIndex) => (
             <RollingDigit key={digitIndex} digit={digit} />
           ))}
           {partIndex < parts.length - 1 && (
-            <span className="text-text-secondary">:</span>
+            <span className="inline-flex h-[1em] items-center text-text-secondary leading-none">
+              :
+            </span>
           )}
         </span>
       ))}

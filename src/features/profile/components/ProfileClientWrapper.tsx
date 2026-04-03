@@ -1,19 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import type { Caregiver, AppSettings, ProfileSection } from "../types";
+import type { ProfileSection } from "../types";
 import { useProfileData } from "../hooks/useProfileData";
 import { ProfileTabs } from "./ProfileTabs";
 import { BabyProfileCard } from "./BabyProfileCard";
-import { CaregiverList } from "./CaregiverList";
+import { BabySummarySection } from "./BabySummarySection";
 import { AppSettingsSection } from "./AppSettingsSection";
 import { DataManagementSection } from "./DataManagementSection";
 import { AccountSection } from "./AccountSection";
-import { MOCK_CAREGIVERS, MOCK_SETTINGS } from "../data/profile-mock-data";
 
 export function ProfileClientWrapper() {
-  const { babyProfile, user, dataStats, isLoading } = useProfileData();
-  const [activeSection, setActiveSection] = useState<ProfileSection>("caregivers");
+  const { babyProfile, user, dataStats, counts, isLoading, refresh } = useProfileData();
+  const [activeSection, setActiveSection] = useState<ProfileSection>("summary");
 
   if (isLoading) {
     return (
@@ -27,7 +26,7 @@ export function ProfileClientWrapper() {
     return (
       <div className="text-center py-20">
         <p className="font-display text-sm text-text-disabled">
-          Nenhum bebê cadastrado
+          Nenhum bebe cadastrado
         </p>
       </div>
     );
@@ -39,23 +38,28 @@ export function ProfileClientWrapper() {
 
       <ProfileTabs active={activeSection} onChange={setActiveSection} />
 
-      {activeSection === "caregivers" && (
+      {activeSection === "summary" && (
         <>
-          <CaregiverList caregivers={MOCK_CAREGIVERS} />
+          <BabySummarySection
+            babyName={babyProfile.name}
+            birthDate={babyProfile.birthDate}
+            counts={counts}
+            totalDays={dataStats.totalDays}
+          />
           <AccountSection userName={user?.name} userEmail={user?.email} />
         </>
       )}
 
       {activeSection === "settings" && (
         <>
-          <AppSettingsSection settings={MOCK_SETTINGS as AppSettings} />
+          <AppSettingsSection />
           <AccountSection userName={user?.name} userEmail={user?.email} />
         </>
       )}
 
       {activeSection === "data" && (
         <>
-          <DataManagementSection stats={dataStats} />
+          <DataManagementSection stats={dataStats} onImported={refresh} />
           <AccountSection userName={user?.name} userEmail={user?.email} />
         </>
       )}

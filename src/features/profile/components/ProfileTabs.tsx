@@ -8,7 +8,7 @@ interface ProfileTabsProps {
 }
 
 const tabs: { id: ProfileSection; label: string }[] = [
-  { id: "caregivers", label: "Cuidadores" },
+  { id: "summary", label: "Resumo" },
   { id: "settings", label: "Config" },
   { id: "data", label: "Dados" },
 ];

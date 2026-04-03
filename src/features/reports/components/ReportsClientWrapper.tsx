@@ -6,10 +6,10 @@ import { useReportsData } from "../hooks/useReportsData";
 import { useReportInsights } from "../hooks/useReportInsights";
 import { ReportsPeriodSelector } from "./ReportsPeriodSelector";
 import { ReportsSummaryCards } from "./ReportsSummaryCards";
-import { FeedingChart } from "./FeedingChart";
-import { SleepChart } from "./SleepChart";
-import { DiaperChart } from "./DiaperChart";
-import { GrowthChart } from "./GrowthChart";
+import { FeedingCanvasChart } from "./FeedingCanvasChart";
+import { SleepCanvasChart } from "./SleepCanvasChart";
+import { DiaperCanvasChart } from "./DiaperCanvasChart";
+import { GrowthCanvasChart } from "./GrowthCanvasChart";
 import { TrendAnalysis } from "./TrendAnalysis";
 import { InsightsSection } from "./InsightsSection";
 
@@ -103,10 +103,10 @@ export function ReportsClientWrapper() {
       ) : (
         <>
           <ReportsSummaryCards summaries={data.summaries} period={period} />
-          <FeedingChart buckets={data.feedingByHour} period={period} />
-          <SleepChart periods={data.sleepPeriods} period={period} />
-          <DiaperChart breakdown={data.diaperBreakdown} period={period} />
-          <GrowthChart series={data.growthSeries} />
+          <FeedingCanvasChart buckets={data.feedingByHour} />
+          <SleepCanvasChart periods={data.sleepPeriods} />
+          <DiaperCanvasChart breakdown={data.diaperBreakdown} />
+          <GrowthCanvasChart series={data.growthSeries} />
           <TrendAnalysis trends={data.trends} summariesPrev={data.summariesPrev} />
           <InsightsSection insights={data.insights} extraInsights={insightsData} />
         </>

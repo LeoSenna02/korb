@@ -15,6 +15,7 @@ interface DisplayActivity {
   title: string;
   details: string;
   timeAgo: string;
+  rawDate: string;
 }
 
 const iconsMap: Record<DisplayActivity["type"], React.ElementType> = {
@@ -39,6 +40,7 @@ function formatActivity(record: ActivityRecord): DisplayActivity {
         title: "Troca de fralda",
         details: `${typeLabel} • ${record.consistency}`,
         timeAgo: timeAgo(record.changedAt),
+        rawDate: record.changedAt,
       };
     }
     case "feeding": {
@@ -63,6 +65,7 @@ function formatActivity(record: ActivityRecord): DisplayActivity {
         title: "Mamada",
         details: details,
         timeAgo: timeAgo(record.startedAt),
+        rawDate: record.startedAt,
       };
     }
     case "growth": {
@@ -75,6 +78,7 @@ function formatActivity(record: ActivityRecord): DisplayActivity {
         title: "Medição",
         details: parts.join(" • "),
         timeAgo: timeAgo(record.measuredAt),
+        rawDate: record.measuredAt,
       };
     }
     default: {
@@ -84,6 +88,7 @@ function formatActivity(record: ActivityRecord): DisplayActivity {
         title: "Atividade",
         details: "",
         timeAgo: "",
+        rawDate: "",
       };
     }
   }
@@ -96,6 +101,7 @@ const EMPTY_ACTIVITIES: DisplayActivity[] = [
     title: "Nenhuma atividade ainda",
     details: "Registre a primeira mamada, fralda ou medição",
     timeAgo: "",
+    rawDate: "",
   },
 ];
 
@@ -138,7 +144,7 @@ export function RecentActivities({ refreshKey }: RecentActivitiesProps) {
     }
 
     try {
-      const records = await getRecentActivities(baby.id, 10);
+      const records = await getRecentActivities(baby.id, 5);
       if (records.length === 0) {
         setActivities(EMPTY_ACTIVITIES);
       } else {
@@ -155,6 +161,17 @@ export function RecentActivities({ refreshKey }: RecentActivitiesProps) {
   useEffect(() => {
     loadActivities();
   }, [loadActivities, refreshKey]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setActivities((prev) =>
+        prev.map((a) =>
+          a.rawDate ? { ...a, timeAgo: timeAgo(a.rawDate) } : a
+        )
+      );
+    }, 30_000);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <section className="mb-8">

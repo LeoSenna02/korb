@@ -15,6 +15,28 @@ export async function saveGrowth(
   return record;
 }
 
+export async function updateGrowth(
+  id: string,
+  data: Partial<Omit<GrowthRecord, "id" | "babyId" | "createdAt">>,
+): Promise<GrowthRecord> {
+  const db = await getDB();
+  const existing = await db.get("growth", id);
+  if (!existing) throw new Error("Growth record not found");
+
+  const updated: GrowthRecord = {
+    ...existing,
+    ...data,
+  };
+
+  await db.put("growth", updated);
+  return updated;
+}
+
+export async function deleteGrowth(id: string): Promise<void> {
+  const db = await getDB();
+  await db.delete("growth", id);
+}
+
 export async function getGrowthByBabyId(babyId: string): Promise<GrowthRecord[]> {
   const db = await getDB();
   const tx = db.transaction("growth");

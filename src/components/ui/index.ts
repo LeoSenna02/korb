@@ -6,3 +6,4 @@ export { GenderSelector } from "./GenderSelector";
 export { BloodTypeSelector } from "./BloodTypeSelector";
 export { BabyHeroCard } from "./BabyHeroCard";
 export { LoadingScreen } from "./LoadingScreen";
+export { ConfirmModal } from "./ConfirmModal";

@@ -91,7 +91,7 @@ function calcFeedingPeakHour(feedings: FeedingRecord[]): string {
   if (feedings.length === 0) return "--";
   const hourCounts = new Map<number, number>();
   for (const f of feedings) {
-    const h = new Date(f.startedAt).getHours();
+    const h = new Date(f.startedAt).getUTCHours();
     hourCounts.set(h, (hourCounts.get(h) ?? 0) + 1);
   }
   let peakHour = 0;

@@ -101,6 +101,23 @@ async function saveStoredUser(user: StoredUser): Promise<void> {
   setItem(STORAGE_KEYS.USER_PREFIX + user.id, JSON.stringify(user));
 }
 
+export async function updateUserFields(
+  userId: string,
+  fields: Partial<Pick<StoredUser, "name" | "email">>
+): Promise<StoredUser> {
+  const user = await getStoredUserById(userId);
+  if (!user) throw new Error("User not found");
+
+  if (fields.email && fields.email !== user.email) {
+    removeFromEmailIndex(user.email);
+    addToEmailIndex(fields.email, userId);
+  }
+
+  const updated: StoredUser = { ...user, ...fields };
+  await saveStoredUser(updated);
+  return updated;
+}
+
 export async function deleteUserById(id: string): Promise<void> {
   const user = await getStoredUserById(id);
   if (user) {

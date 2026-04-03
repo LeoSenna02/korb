@@ -128,14 +128,22 @@ export async function getWeeklyStats(
   babyId: string
 ): Promise<WeeklyStat[]> {
   const now = new Date();
-  const oneWeekAgo = new Date(now);
-  oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-  oneWeekAgo.setHours(0, 0, 0, 0);
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  const day = now.getDate();
+
+  const endOfTodayUtc = new Date(Date.UTC(year, month, day, 23, 59, 59, 999));
+  const oneWeekAgoDate = new Date(now);
+  oneWeekAgoDate.setDate(oneWeekAgoDate.getDate() - 7);
+  const weekYear = oneWeekAgoDate.getFullYear();
+  const weekMonth = oneWeekAgoDate.getMonth();
+  const weekDay = oneWeekAgoDate.getDate();
+  const startOfWeekUtc = new Date(Date.UTC(weekYear, weekMonth, weekDay, 0, 0, 0, 0));
 
   const [thisWeekFeedings, thisWeekSleeps, thisWeekDiapers] = await Promise.all([
-    getReportFeedings(babyId, oneWeekAgo, now),
-    getReportSleeps(babyId, oneWeekAgo, now),
-    getReportDiapers(babyId, oneWeekAgo, now),
+    getReportFeedings(babyId, startOfWeekUtc, endOfTodayUtc),
+    getReportSleeps(babyId, startOfWeekUtc, endOfTodayUtc),
+    getReportDiapers(babyId, startOfWeekUtc, endOfTodayUtc),
   ]);
 
   const completedSleeps = thisWeekSleeps.filter((s) => s.endedAt);

@@ -25,14 +25,22 @@ export async function getSleepsByBabyId(babyId: string): Promise<SleepRecord[]> 
 }
 
 export async function getTodaySleepRecords(babyId: string): Promise<SleepRecord[]> {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  const day = now.getDate();
+
+  // Start of today in UTC (midnight local = some hour in UTC depending on timezone)
+  const startOfTodayUtc = new Date(Date.UTC(year, month, day, 0, 0, 0, 0));
+  // End of today in UTC (23:59:59.999 local)
+  const endOfTodayUtc = new Date(Date.UTC(year, month, day, 23, 59, 59, 999));
+
   const db = await getDB();
   const tx = db.transaction("sleeps");
   const index = tx.store.index("byBabyIdAndStarted");
   const range = IDBKeyRange.bound(
-    [babyId, today.toISOString()],
-    [babyId, new Date().toISOString()]
+    [babyId, startOfTodayUtc.toISOString()],
+    [babyId, endOfTodayUtc.toISOString()]
   );
   const all = await index.getAll(range);
   return all.filter((r) => r.endedAt != null);

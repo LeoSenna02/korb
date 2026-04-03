@@ -7,13 +7,27 @@ import type { HistoryActivity, HistoryGroup, HistoryFilter, WeeklyStat } from ".
 
 function groupActivitiesByDate(activities: HistoryActivity[]): HistoryGroup[] {
   const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
-  const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000);
-  yesterday.setHours(23, 59, 59, 999);
-  const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
-  weekAgo.setHours(23, 59, 59, 999);
-  const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
-  monthAgo.setHours(23, 59, 59, 999);
+  const todayYear = now.getFullYear();
+  const todayMonth = now.getMonth();
+  const todayDate = now.getDate();
+
+  const yesterdayDate = new Date(now);
+  yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+  const yesterdayYear = yesterdayDate.getFullYear();
+  const yesterdayMonth = yesterdayDate.getMonth();
+  const yesterdayDay = yesterdayDate.getDate();
+
+  const weekAgoDate = new Date(now);
+  weekAgoDate.setDate(weekAgoDate.getDate() - 7);
+  const weekAgoYear = weekAgoDate.getFullYear();
+  const weekAgoMonth = weekAgoDate.getMonth();
+  const weekAgoDay = weekAgoDate.getDate();
+
+  const monthAgoDate = new Date(now);
+  monthAgoDate.setDate(monthAgoDate.getDate() - 30);
+  const monthAgoYear = monthAgoDate.getFullYear();
+  const monthAgoMonth = monthAgoDate.getMonth();
+  const monthAgoDay = monthAgoDate.getDate();
 
   const groups: Record<string, HistoryActivity[]> = {
     Hoje: [],
@@ -25,15 +39,26 @@ function groupActivitiesByDate(activities: HistoryActivity[]): HistoryGroup[] {
 
   for (const activity of activities) {
     const activityDate = new Date(activity.sortKey);
-    activityDate.setHours(23, 59, 59, 999);
+    const aYear = activityDate.getFullYear();
+    const aMonth = activityDate.getMonth();
+    const aDay = activityDate.getDate();
 
-    if (activityDate >= today) {
+    // Check if activity is today (local date matches today)
+    if (aYear === todayYear && aMonth === todayMonth && aDay === todayDate) {
       groups["Hoje"].push(activity);
-    } else if (activityDate >= yesterday) {
+    } else if (aYear === yesterdayYear && aMonth === yesterdayMonth && aDay === yesterdayDay) {
       groups["Ontem"].push(activity);
-    } else if (activityDate >= weekAgo) {
+    } else if (
+      aYear > weekAgoYear ||
+      (aYear === weekAgoYear && aMonth > weekAgoMonth) ||
+      (aYear === weekAgoYear && aMonth === weekAgoMonth && aDay >= weekAgoDay)
+    ) {
       groups["Esta Semana"].push(activity);
-    } else if (activityDate >= monthAgo) {
+    } else if (
+      aYear > monthAgoYear ||
+      (aYear === monthAgoYear && aMonth > monthAgoMonth) ||
+      (aYear === monthAgoYear && aMonth === monthAgoMonth && aDay >= monthAgoDay)
+    ) {
       groups["Este Mês"].push(activity);
     } else {
       groups["Mais Antigos"].push(activity);

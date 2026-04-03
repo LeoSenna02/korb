@@ -46,7 +46,7 @@ export function Sheet({
             animate={{ y: 0 }}
             exit={{ y: "100%" }}
             transition={{ type: "spring", damping: 25, stiffness: 200 }}
-            className="fixed bottom-0 left-0 right-0 bg-surface-container-low rounded-t-[40px] z-[70] px-6 pt-3 pb-safe max-h-[90vh] overflow-y-auto no-scrollbar shadow-2xl border-t border-outline/5"
+            className="fixed bottom-0 left-2 right-2 bg-surface-container-low rounded-t-3xl z-[70] px-6 pt-3 pb-safe max-h-[90vh] overflow-y-auto no-scrollbar shadow-2xl"
           >
             {/* Drag handle */}
             <div className="flex justify-center mb-4">

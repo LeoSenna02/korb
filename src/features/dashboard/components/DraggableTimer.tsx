@@ -14,10 +14,19 @@ function formatElapsed(seconds: number): string {
 
 export function DraggableTimer() {
   const constraintsRef = useRef<HTMLDivElement>(null);
-  const { isActive, elapsedSeconds } = useSleep();
+  const { isActive, isPaused, elapsedSeconds } = useSleep();
   const router = useRouter();
 
   if (!isActive) return null;
+
+  const timerLabel = isPaused ? "Timer Pausado" : "Timer Ativo";
+  const containerClasses = isPaused
+    ? "bg-[#D2B59D]/18 border-[#D2B59D]/35 hover:bg-[#D2B59D]/24"
+    : "bg-surface-container-highest/90 border-outline-variant/50 hover:bg-surface-variant";
+  const dotClasses = isPaused
+    ? "bg-[#D2B59D] shadow-[0_0_8px_rgba(210,181,157,0.7)]"
+    : "bg-[#8EAF96] shadow-[0_0_8px_rgba(142,175,150,0.8)] animate-pulse";
+  const textClasses = isPaused ? "text-[#E7D6C8]" : "text-text-primary";
 
   return (
     <div
@@ -32,10 +41,10 @@ export function DraggableTimer() {
         className="pointer-events-auto"
         onClick={() => router.push("/sleep")}
       >
-        <div className="flex items-center gap-3 px-5 py-3 bg-surface-container-highest/90 backdrop-blur-xl border border-outline-variant/50 shadow-elevated rounded-full cursor-grab active:cursor-grabbing hover:bg-surface-variant transition-colors">
-          <div className="w-2.5 h-2.5 rounded-full bg-[#8EAF96] shadow-[0_0_8px_rgba(142,175,150,0.8)] animate-pulse" />
-          <span className="font-data text-sm text-text-primary tracking-wide font-medium">
-            Timer Ativo: {formatElapsed(elapsedSeconds)}
+        <div className={`flex items-center gap-3 px-5 py-3 backdrop-blur-xl border shadow-elevated rounded-full cursor-grab active:cursor-grabbing transition-colors ${containerClasses}`}>
+          <div className={`w-2.5 h-2.5 rounded-full ${dotClasses}`} />
+          <span className={`font-data text-sm tracking-wide font-medium ${textClasses}`}>
+            {timerLabel}: {formatElapsed(elapsedSeconds)}
           </span>
         </div>
       </motion.div>

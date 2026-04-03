@@ -17,7 +17,6 @@ export function formatDate(isoString: string): string {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
-    timeZone: "America/Sao_Paulo",
   });
 }
 
@@ -28,7 +27,6 @@ export function formatDateLong(isoString: string): string {
     day: "2-digit",
     month: "long",
     year: "numeric",
-    timeZone: "America/Sao_Paulo",
   });
 }
 
@@ -37,14 +35,13 @@ export function formatTime(isoString: string): string {
     hour: "2-digit",
     minute: "2-digit",
     hour12: false,
-    timeZone: "America/Sao_Paulo",
   });
 }
 
 export function formatMonthShort(isoString: string): string {
   const isDateOnly = /^\d{4}-\d{2}-\d{2}$/.test(isoString);
   const date = isDateOnly ? parseDateLocal(isoString) : new Date(isoString);
-  return date.toLocaleDateString("pt-BR", { month: "short", timeZone: "America/Sao_Paulo" });
+  return date.toLocaleDateString("pt-BR", { month: "short" });
 }
 
 export function formatDuration(seconds: number): string {

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronRight } from "lucide-react";
 import { useModal } from "@/contexts/ModalContext";
+import { useAppSettings } from "../hooks/useAppSettings";
 import type { AppSettings, Language, WeightUnit, VolumeUnit } from "../types";
 
 const container = {
@@ -27,10 +28,6 @@ const item = {
     },
   },
 };
-
-interface AppSettingsSectionProps {
-  settings: AppSettings;
-}
 
 interface ToggleProps {
   checked: boolean;
@@ -128,7 +125,6 @@ function CustomSelector({ label, value, options, onChange }: CustomSelectorProps
         </div>
       </button>
 
-      {/* Backdrop */}
       {isOpen && (
         <motion.div
           initial={{ opacity: 0 }}
@@ -139,7 +135,6 @@ function CustomSelector({ label, value, options, onChange }: CustomSelectorProps
         />
       )}
 
-      {/* Bottom Sheet */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -150,15 +145,12 @@ function CustomSelector({ label, value, options, onChange }: CustomSelectorProps
             className="fixed bottom-0 left-0 right-0 z-50 bg-surface-container-highest rounded-t-3xl px-4 pb-8 pt-4"
             style={{ borderRadius: "24px 24px 0 0" }}
           >
-            {/* Handle */}
             <div className="w-10 h-1 bg-surface-variant rounded-full mx-auto mb-4" />
 
-            {/* Title */}
             <h4 className="font-display text-base font-medium text-text-primary text-center mb-4">
               {label}
             </h4>
 
-            {/* Options */}
             <div className="flex flex-col gap-2">
               {options.map((option) => (
                 <button
@@ -207,7 +199,6 @@ function CustomSelector({ label, value, options, onChange }: CustomSelectorProps
               ))}
             </div>
 
-            {/* Cancel button */}
             <button
               onClick={() => setIsOpen(false)}
               className="w-full mt-4 py-3 text-center font-display text-sm text-text-secondary hover:text-text-primary transition-colors"
@@ -221,12 +212,23 @@ function CustomSelector({ label, value, options, onChange }: CustomSelectorProps
   );
 }
 
-export function AppSettingsSection({ settings }: AppSettingsSectionProps) {
-  const [local, setLocal] = useState<AppSettings>({ ...settings });
+export function AppSettingsSection() {
+  const { settings, updateSetting, isHydrated } = useAppSettings();
 
-  const update = <K extends keyof AppSettings>(key: K, val: AppSettings[K]) => {
-    setLocal((prev) => ({ ...prev, [key]: val }));
-  };
+  if (!isHydrated) {
+    return (
+      <div className="mb-8">
+        <h3 className="font-display text-lg font-medium text-text-primary tracking-tight mb-4">
+          Configuracoes do App
+        </h3>
+        <div className="bg-surface-container-low rounded-2xl border border-surface-variant/20 p-4">
+          <div className="flex items-center justify-center py-8">
+            <div className="w-5 h-5 border-2 border-text-disabled border-t-transparent rounded-full animate-spin" />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <motion.div
@@ -236,79 +238,73 @@ export function AppSettingsSection({ settings }: AppSettingsSectionProps) {
       className="mb-8"
     >
       <h3 className="font-display text-lg font-medium text-text-primary tracking-tight mb-4">
-        Configurações do App
+        Configuracoes do App
       </h3>
 
       <motion.div
         variants={item}
         className="bg-surface-container-low rounded-2xl border border-surface-variant/20 overflow-hidden"
       >
-        {/* Notificações */}
         <motion.div variants={item} className="px-4">
           <Toggle
-            checked={local.notificationsEnabled}
-            onChange={(v) => update("notificationsEnabled", v)}
-            label="Notificações"
+            checked={settings.notificationsEnabled}
+            onChange={(v) => updateSetting("notificationsEnabled", v)}
+            label="Notificacoes"
             description="Alertas para mamadas, sono e trocas"
           />
         </motion.div>
         <div className="mx-4 border-t border-surface-variant/10" />
 
-        {/* Som */}
         <motion.div variants={item} className="px-4">
           <Toggle
-            checked={local.soundEnabled}
-            onChange={(v) => update("soundEnabled", v)}
+            checked={settings.soundEnabled}
+            onChange={(v) => updateSetting("soundEnabled", v)}
             label="Sons"
-            description="Vibração e toque ao registrar"
+            description="Vibracao e toque ao registrar"
           />
         </motion.div>
         <div className="mx-4 border-t border-surface-variant/10" />
 
-        {/* Idioma */}
         <motion.div variants={item} className="px-4">
           <CustomSelector
             label="Idioma"
-            value={local.language}
+            value={settings.language}
             options={[
-              { value: "pt-BR", label: "Português (BR)", description: "Brasil" },
+              { value: "pt-BR", label: "Portugues (BR)", description: "Brasil" },
               { value: "en-US", label: "English", description: "United States" },
-              { value: "es-ES", label: "Español", description: "España" },
+              { value: "es-ES", label: "Espanol", description: "Espana" },
             ]}
-            onChange={(v) => update("language", v as Language)}
+            onChange={(v) => updateSetting("language", v as Language)}
           />
         </motion.div>
         <div className="mx-4 border-t border-surface-variant/10" />
 
-        {/* Unidade de peso */}
         <motion.div variants={item} className="px-4">
           <CustomSelector
             label="Unidade de Peso"
-            value={local.weightUnit}
+            value={settings.weightUnit}
             options={[
               { value: "kg", label: "Quilogramas", description: "quilogramas (kg)" },
               { value: "lb", label: "Libras", description: "libras (lb)" },
             ]}
-            onChange={(v) => update("weightUnit", v as WeightUnit)}
+            onChange={(v) => updateSetting("weightUnit", v as WeightUnit)}
           />
         </motion.div>
         <div className="mx-4 border-t border-surface-variant/10" />
 
-        {/* Unidade de volume */}
         <motion.div variants={item} className="px-4">
           <CustomSelector
             label="Unidade de Volume"
-            value={local.volumeUnit}
+            value={settings.volumeUnit}
             options={[
               { value: "ml", label: "Mililitros", description: "mililitros (ml)" },
-              { value: "oz", label: "Onças", description: "onças fluidas (oz)" },
+              { value: "oz", label: "Oncas", description: "oncas fluidas (oz)" },
             ]}
-            onChange={(v) => update("volumeUnit", v as VolumeUnit)}
+            onChange={(v) => updateSetting("volumeUnit", v as VolumeUnit)}
           />
         </motion.div>
         <div className="mx-4 border-t border-surface-variant/10" />
 
-        {/* Sobre o app */}
         <motion.div variants={item} className="px-4">
           <button className="w-full flex items-center justify-between py-4">
             <div className="text-left">
@@ -316,7 +312,7 @@ export function AppSettingsSection({ settings }: AppSettingsSectionProps) {
                 Sobre o Korb
               </span>
               <span className="font-data text-[10px] text-text-disabled mt-0.5 block">
-                Versão 1.0.0
+                Versao 1.0.0
               </span>
             </div>
             <ChevronRight className="w-4 h-4 text-text-disabled" />

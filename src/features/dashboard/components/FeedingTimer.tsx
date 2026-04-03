@@ -2,6 +2,7 @@
 
 import { Play, Pause, RotateCcw, ArrowLeftRight } from "lucide-react";
 import { useState, useRef, useCallback, useEffect } from "react";
+import { TimerValue } from "./TimerValue";
 
 interface FeedingTimerProps {
   onTimeChange?: (seconds: number) => void;
@@ -9,7 +10,6 @@ interface FeedingTimerProps {
   onRightSecondsChange?: (seconds: number) => void;
   onStart?: () => void;
   onPause?: () => void;
-  onResume?: () => void;
   onStop?: () => void;
   dual?: boolean;
   initialLeftSeconds?: number;
@@ -34,9 +34,10 @@ function SingleTimer({ isActive, elapsedSeconds, onToggle, onReset }: {
 }) {
   return (
     <div className="flex flex-col items-center mb-12">
-      <div className="font-display text-[64px] leading-none text-text-primary mb-10 tracking-tight font-light">
-        {formatTime(elapsedSeconds)}
-      </div>
+      <TimerValue
+        value={formatTime(elapsedSeconds)}
+        className="font-display text-[64px] text-text-primary mb-10 tracking-tight font-light"
+      />
 
       <div className="flex items-center gap-4">
         <button
@@ -104,9 +105,10 @@ export function DualTimer({
           <span className="font-data text-[10px] text-text-disabled uppercase tracking-widest mb-2">
             Esquerdo
           </span>
-          <span className={`font-display text-[28px] sm:text-[32px] font-light tabular-nums ${isLeftActive ? "text-primary" : "text-text-secondary"}`}>
-            {formatTime(leftSeconds)}
-          </span>
+          <TimerValue
+            value={formatTime(leftSeconds)}
+            className={`font-display text-[28px] sm:text-[32px] font-light ${isLeftActive ? "text-primary" : "text-text-secondary"}`}
+          />
           {isLeftActive && isActive && (
             <div className="mt-1.5 w-2 h-2 rounded-full bg-primary animate-pulse" />
           )}
@@ -134,9 +136,10 @@ export function DualTimer({
           <span className="font-data text-[10px] text-text-disabled uppercase tracking-widest mb-2">
             Direito
           </span>
-          <span className={`font-display text-[28px] sm:text-[32px] font-light tabular-nums ${isRightActive ? "text-primary" : "text-text-secondary"}`}>
-            {formatTime(rightSeconds)}
-          </span>
+          <TimerValue
+            value={formatTime(rightSeconds)}
+            className={`font-display text-[28px] sm:text-[32px] font-light ${isRightActive ? "text-primary" : "text-text-secondary"}`}
+          />
           {isRightActive && isActive && (
             <div className="mt-1.5 w-2 h-2 rounded-full bg-primary animate-pulse" />
           )}
@@ -148,9 +151,10 @@ export function DualTimer({
         <span className="font-data text-[10px] text-text-disabled uppercase tracking-widest mb-1.5">
           Tempo Total
         </span>
-        <span className="font-display text-[24px] sm:text-[28px] font-light text-text-primary tabular-nums">
-          {formatTime(totalSeconds)}
-        </span>
+        <TimerValue
+          value={formatTime(totalSeconds)}
+          className="font-display text-[24px] sm:text-[28px] font-light text-text-primary"
+        />
       </div>
 
       {/* Controls */}
@@ -187,7 +191,6 @@ export function FeedingTimer({
   onRightSecondsChange,
   onStart,
   onPause,
-  onResume,
   onStop,
   dual,
   initialLeftSeconds = 0,

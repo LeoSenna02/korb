@@ -2,6 +2,7 @@
 
 import { Baby, Moon, Droplet, TrendingUp } from "lucide-react";
 import type { ReportPeriod, ReportSummary } from "../types";
+import { formatWeightGramsCompact } from "../utils/weight-format";
 
 interface ReportsSummaryCardsProps {
   summaries: ReportSummary;
@@ -67,7 +68,7 @@ const cards = [
     label: "Ganho de Peso",
     color: "#E3E2E6",
     bgColor: "bg-surface-variant",
-    getValue: (s: ReportSummary) => `+${s.weightGainGrams}g`,
+    getValue: (s: ReportSummary) => `+${formatWeightGramsCompact(s.weightGainGrams)}`,
     getTrend: (s: ReportSummary) => s.weightTrend,
   },
 ];

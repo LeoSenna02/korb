@@ -11,6 +11,14 @@ import type { MilestoneRecord } from "../types";
 import { useBaby } from "@/contexts/BabyContext";
 import { saveMilestone, updateMilestone } from "@/lib/db/repositories/milestone";
 
+function getLocalDateString(): string {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 const CATEGORIES: MilestoneCategory[] = ["motor_grossa", "motor_fina", "linguagem", "social"];
 
 export function MilestonesClient() {
@@ -55,13 +63,13 @@ export function MilestonesClient() {
       } else {
         // Has record but not achieved yet - mark as achieved with today
         await updateMilestone(existingRecord.id, {
-          actualDate: new Date().toISOString().split("T")[0],
+          actualDate: getLocalDateString(),
         });
         refresh();
       }
     } else {
       // No record - create and mark as achieved with today
-      const today = new Date().toISOString().split("T")[0];
+      const today = getLocalDateString();
       await saveMilestone({
         id: crypto.randomUUID(),
         babyId: baby.id,

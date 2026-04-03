@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import type { GrowthDataPoint } from "../types";
 import { formatMonthShort, formatNumber } from "@/lib/utils/format";
 
@@ -94,6 +95,28 @@ export function GrowthChart({ series }: GrowthChartProps) {
           <span className="font-data text-[10px] text-text-disabled ml-1">atual</span>
         </div>
       </div>
+
+      <Link
+        href="/dashboard/growth"
+        className="flex items-center gap-1 mb-3 group"
+      >
+        <span className="font-data text-[10px] text-primary uppercase tracking-wider">
+          Ver detalhes
+        </span>
+        <svg
+          viewBox="0 0 16 16"
+          fill="none"
+          className="w-3 h-3 text-primary transition-transform duration-200 group-hover:translate-x-0.5"
+        >
+          <path
+            d="M6 4l4 4-4 4"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </Link>
 
       <div className="bg-surface-container-low rounded-2xl p-4">
         <svg

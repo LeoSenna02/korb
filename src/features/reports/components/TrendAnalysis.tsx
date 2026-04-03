@@ -1,7 +1,7 @@
 "use client";
 
-import { TrendingUp, TrendingDown, Minus } from "lucide-react";
 import type { TrendComparison, ReportSummary } from "../types";
+import { formatWeightGramsForReport } from "../utils/weight-format";
 
 interface TrendAnalysisProps {
   trends: TrendComparison[];
@@ -15,12 +15,13 @@ const metricColor: Record<string, string> = {
   weight: "#E3E2E6",
 };
 
-const metricIcon: Record<string, string> = {
-  feedings: "x",
-  sleep: "h",
-  diapers: "x",
-  weight: "g",
-};
+function formatTrendValue(trend: TrendComparison, value: number) {
+  if (trend.metric === "weight") {
+    return formatWeightGramsForReport(value);
+  }
+
+  return `${value} ${trend.unit}`;
+}
 
 export function TrendAnalysis({ trends }: TrendAnalysisProps) {
   const maxCurrent = Math.max(...trends.map((t) => t.current));
@@ -80,7 +81,7 @@ export function TrendAnalysis({ trends }: TrendAnalysisProps) {
                     />
                   </div>
                   <span className="font-data text-[11px] text-text-disabled w-16 text-right tabular-nums">
-                    {trend.previous} {trend.unit}
+                    {formatTrendValue(trend, trend.previous)}
                   </span>
                 </div>
 
@@ -97,7 +98,7 @@ export function TrendAnalysis({ trends }: TrendAnalysisProps) {
                     />
                   </div>
                   <span className="font-data text-[11px] text-text-primary font-semibold w-16 text-right tabular-nums">
-                    {trend.current} {trend.unit}
+                    {formatTrendValue(trend, trend.current)}
                   </span>
                 </div>
               </div>

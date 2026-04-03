@@ -83,7 +83,8 @@ export function buildFeedingByHour(feedings: FeedingRecord[]): FeedingHourBucket
   }));
 
   for (const f of feedings) {
-    const hour = new Date(f.startedAt).getHours();
+    // Use getUTCHours since startedAt is stored as UTC ISO string
+    const hour = new Date(f.startedAt).getUTCHours();
     buckets[hour].count += 1;
     buckets[hour].totalMl += f.volumeMl ?? 0;
   }
@@ -101,10 +102,11 @@ export function buildSleepPeriods(sleeps: SleepRecord[]): SleepPeriod[] {
     const start = new Date(s.startedAt);
     const end = new Date(s.endedAt);
     const durationMinutes = Math.round((end.getTime() - start.getTime()) / 60000);
-    const startHour = start.getHours();
-    const startMin = start.getMinutes();
-    const endHour = end.getHours();
-    const endMin = end.getMinutes();
+    // Use UTC methods since startedAt/endedAt are stored as UTC ISO strings
+    const startHour = start.getUTCHours();
+    const startMin = start.getUTCMinutes();
+    const endHour = end.getUTCHours();
+    const endMin = end.getUTCMinutes();
 
     const block: SleepPeriodBlock = {
       start: `${String(startHour).padStart(2, "0")}:${String(startMin).padStart(2, "0")}`,
@@ -241,7 +243,8 @@ export function buildMilestones(
 
   const dailyVolumes = new Map<string, number>();
   for (const f of feedings) {
-    const day = new Date(f.startedAt).toISOString().slice(0, 10);
+    const localDate = new Date(f.startedAt);
+    const day = `${localDate.getFullYear()}-${String(localDate.getMonth() + 1).padStart(2, "0")}-${String(localDate.getDate()).padStart(2, "0")}`;
     dailyVolumes.set(day, (dailyVolumes.get(day) ?? 0) + (f.volumeMl ?? 0));
   }
   for (const [day, total] of dailyVolumes) {
@@ -384,7 +387,7 @@ function buildFeedingInsights(feedings: FeedingRecord[], insights: Insight[]): v
 
   const hourCounts = new Map<number, number>();
   for (const f of feedings) {
-    const h = new Date(f.startedAt).getHours();
+    const h = new Date(f.startedAt).getUTCHours();
     hourCounts.set(h, (hourCounts.get(h) ?? 0) + 1);
   }
 
@@ -417,7 +420,8 @@ function buildDiaperInsights(
 
   const daysMap = new Map<string, number>();
   for (const d of diapers) {
-    const day = new Date(d.changedAt).toISOString().slice(0, 10);
+    const localDate = new Date(d.changedAt);
+    const day = `${localDate.getFullYear()}-${String(localDate.getMonth() + 1).padStart(2, "0")}-${String(localDate.getDate()).padStart(2, "0")}`;
     daysMap.set(day, (daysMap.get(day) ?? 0) + 1);
   }
 
@@ -500,5 +504,5 @@ function formatHourMinute(totalMinutes: number): string {
 
 function formatMonthYear(date: Date): string {
   const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
-  return `${months[date.getMonth()]} ${date.getFullYear()}`;
+  return `${months[date.getUTCMonth()]} ${date.getUTCFullYear()}`;
 }

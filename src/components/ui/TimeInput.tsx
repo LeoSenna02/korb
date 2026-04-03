@@ -1,6 +1,6 @@
 "use client";
 
-import { forwardRef, useState, useRef, useEffect, UIEvent } from "react";
+import { forwardRef, useState, useRef, useEffect, useCallback } from "react";
 
 interface TimeInputProps {
   label: string;
@@ -78,7 +78,7 @@ TimeInput.displayName = "TimeInput";
 
 function ScrollWheel({ options, value, onChange, widthClass }: { options: string[], value: string, onChange: (v: string) => void, widthClass: string }) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const scrollTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isAnimating = useRef(false);
 
   useEffect(() => {
     const idx = options.indexOf(value);
@@ -87,16 +87,48 @@ function ScrollWheel({ options, value, onChange, widthClass }: { options: string
     }
   }, []);
 
-  const handleScroll = (e: UIEvent<HTMLDivElement>) => {
-    const y = e.currentTarget.scrollTop;
-    const idx = Math.round(y / ITEM_HEIGHT);
-    const newValue = options[Math.min(Math.max(idx, 0), options.length - 1)];
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
 
-    if (scrollTimeout.current) clearTimeout(scrollTimeout.current);
-    scrollTimeout.current = setTimeout(() => {
-      onChange(newValue);
-    }, 100);
-  };
+    let debounce: ReturnType<typeof setTimeout> | null = null;
+
+    function onWheel(e: WheelEvent) {
+      e.preventDefault();
+      const container = containerRef.current;
+      if (!container) return;
+
+      if (debounce) return;
+      debounce = setTimeout(() => { debounce = null; }, 200);
+
+      const direction = e.deltaY > 0 ? 1 : -1;
+      const currentIdx = Math.round(container.scrollTop / ITEM_HEIGHT);
+      const target = Math.min(Math.max(currentIdx + direction, 0), options.length - 1);
+
+      isAnimating.current = true;
+      container.scrollTo({ top: target * ITEM_HEIGHT, behavior: "smooth" });
+
+      onChange(options[target]);
+
+      setTimeout(() => { isAnimating.current = false; }, 300);
+    }
+
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => {
+      el.removeEventListener("wheel", onWheel);
+      if (debounce) clearTimeout(debounce);
+    };
+  }, [options, onChange]);
+
+  const handleScroll = useCallback(() => {
+    if (isAnimating.current) return;
+    const el = containerRef.current;
+    if (!el) return;
+
+    const idx = Math.round(el.scrollTop / ITEM_HEIGHT);
+    const newValue = options[Math.min(Math.max(idx, 0), options.length - 1)];
+    onChange(newValue);
+  }, [options, onChange]);
 
   return (
     <div
@@ -104,7 +136,7 @@ function ScrollWheel({ options, value, onChange, widthClass }: { options: string
       onScroll={handleScroll}
       className={`h-full overflow-y-auto snap-y snap-mandatory scrollbar-none [&::-webkit-scrollbar]:hidden ${widthClass}`}
     >
-      <div style={{ height: ITEM_HEIGHT }} /> 
+      <div style={{ height: ITEM_HEIGHT }} />
       {options.map((opt) => (
         <div
           key={opt}
@@ -115,7 +147,7 @@ function ScrollWheel({ options, value, onChange, widthClass }: { options: string
           {opt}
         </div>
       ))}
-      <div style={{ height: ITEM_HEIGHT }} /> 
+      <div style={{ height: ITEM_HEIGHT }} />
     </div>
   );
 }

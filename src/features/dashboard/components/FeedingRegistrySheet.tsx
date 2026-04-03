@@ -11,6 +11,7 @@ import { useBaby } from "@/contexts/BabyContext";
 import { saveFeeding } from "@/lib/db/repositories/feeding";
 import { useFeedingTimer } from "../hooks/useFeedingTimer";
 import { VolumeInput } from "./VolumeInput";
+import { TimerValue } from "./TimerValue";
 
 interface FeedingRegistrySheetProps {
   isOpen: boolean;
@@ -140,11 +141,10 @@ export function FeedingRegistrySheet({ isOpen, onClose, onSaved }: FeedingRegist
             />
           ) : (
             <div className="flex flex-col items-center py-12">
-              <span className="font-display text-6xl text-text-primary mb-8 tracking-tight">
-                {String(Math.floor(durationSeconds / 3600)).padStart(2, "0")}:
-                {String(Math.floor((durationSeconds % 3600) / 60)).padStart(2, "0")}:
-                {String(durationSeconds % 60).padStart(2, "0")}
-              </span>
+              <TimerValue
+                value={`${String(Math.floor(durationSeconds / 3600)).padStart(2, "0")}:${String(Math.floor((durationSeconds % 3600) / 60)).padStart(2, "0")}:${String(durationSeconds % 60).padStart(2, "0")}`}
+                className="font-display text-6xl text-text-primary mb-8 tracking-tight"
+              />
               <button
                 onClick={toggleTimer}
                 className="w-24 h-24 rounded-full bg-surface-variant/30 border border-outline-variant/20 flex items-center justify-center text-primary hover:bg-surface-variant/50 transition-all active:scale-95"
