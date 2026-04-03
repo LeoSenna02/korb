@@ -41,7 +41,10 @@ export default function DashboardLayout({
   return (
     <FeedingTimerProvider>
       <ModalProvider>
-        <div className="min-h-screen bg-surface-dim pb-20 relative">
+        <div
+          className="min-h-screen bg-surface-dim relative"
+          style={{ paddingBottom: "calc(8.5rem + env(safe-area-inset-bottom))" }}
+        >
           <div className="flex-1">{children}</div>
           <DraggableTimer />
           <BottomNav />

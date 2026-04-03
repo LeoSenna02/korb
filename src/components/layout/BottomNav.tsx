@@ -21,7 +21,13 @@ export function BottomNav() {
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 h-24 bg-surface-container-low/90 backdrop-blur-xl border-t border-surface-variant/20 flex justify-around items-center px-6 pb-2 z-50 rounded-t-[40px] shadow-[0_-8px_30px_rgba(0,0,0,0.1)]">
+    <nav
+      className="fixed left-4 right-4 min-h-24 bg-surface-container-low/90 backdrop-blur-xl border border-surface-variant/20 flex justify-around items-center px-4 pt-3 z-50 rounded-[32px] shadow-[0_-8px_30px_rgba(0,0,0,0.1)]"
+      style={{
+        bottom: "max(0.75rem, env(safe-area-inset-bottom))",
+        paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom))",
+      }}
+    >
       {navItems.map((item) => {
         const isActive = pathname === item.path;
         const Icon = item.icon;
