@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Plus, Check, Calendar, Trash2 } from "lucide-react";
+import { Plus, Check, Trash2, XCircle } from "lucide-react";
 import { Sheet } from "@/components/ui/Sheet";
 import { Input } from "@/components/ui/Input";
 import { DateInput } from "@/components/ui/DateInput";
@@ -78,14 +78,9 @@ export function AddMilestoneSheet({
     setIsSaving(true);
     try {
       if (isEditing && existingRecord) {
-        // Only update actualDate if user set a new date (don't clear existing)
         const updates: Parameters<typeof updateMilestone>[1] = {};
-        if (achievedDate) {
-          updates.actualDate = achievedDate;
-        }
-        if (notes.trim()) {
-          updates.notes = notes.trim();
-        }
+        updates.actualDate = achievedDate || undefined;
+        updates.notes = notes.trim() || undefined;
         await updateMilestone(existingRecord.id, updates);
       } else {
         await saveMilestone({
@@ -106,6 +101,23 @@ export function AddMilestoneSheet({
       handleClose();
     } catch (err) {
       console.error("[AddMilestoneSheet] Save error:", err);
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  async function handleUnmark() {
+    if (!existingRecord) return;
+
+    setIsSaving(true);
+    try {
+      await updateMilestone(existingRecord.id, {
+        actualDate: undefined,
+      });
+      onSave?.();
+      handleClose();
+    } catch (err) {
+      console.error("[AddMilestoneSheet] Unmark error:", err);
     } finally {
       setIsSaving(false);
     }
@@ -268,6 +280,17 @@ export function AddMilestoneSheet({
             )}
 
             <div className="flex gap-3">
+              {isEditing && existingRecord.actualDate && (
+                <button
+                  onClick={handleUnmark}
+                  disabled={isSaving}
+                  className="h-14 px-4 bg-surface-variant/30 hover:bg-surface-variant/50 active:scale-[0.98] text-text-primary font-display font-medium rounded-2xl flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+                >
+                  <XCircle className="w-5 h-5" />
+                  Desmarcar
+                </button>
+              )}
+
               {!isEditing && (
                 <button
                   onClick={() => setFormState(isCustom ? "edit" : "date")}
@@ -280,7 +303,8 @@ export function AddMilestoneSheet({
               {isEditing && (
                 <button
                   onClick={handleDelete}
-                  className="w-14 h-14 bg-tertiary-container/20 hover:bg-tertiary-container/30 active:scale-[0.98] text-tertiary-container font-display font-medium rounded-2xl flex items-center justify-center transition-all"
+                  disabled={isSaving}
+                  className="w-14 h-14 bg-tertiary-container/20 hover:bg-tertiary-container/30 active:scale-[0.98] text-tertiary-container font-display font-medium rounded-2xl flex items-center justify-center transition-all disabled:opacity-50"
                 >
                   <Trash2 className="w-5 h-5" />
                 </button>

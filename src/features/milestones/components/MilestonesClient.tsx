@@ -56,10 +56,10 @@ export function MilestonesClient() {
 
     if (existingRecord) {
       if (existingRecord.actualDate) {
-        // Already achieved - open edit sheet
-        setSelectedRecord(existingRecord);
-        setSelectedTemplate(undefined);
-        setSheetOpen(true);
+        await updateMilestone(existingRecord.id, {
+          actualDate: undefined,
+        });
+        refresh();
       } else {
         // Has record but not achieved yet - mark as achieved with today
         await updateMilestone(existingRecord.id, {

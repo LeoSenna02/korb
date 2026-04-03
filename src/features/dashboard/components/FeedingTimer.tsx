@@ -92,11 +92,11 @@ export function DualTimer({
   return (
     <div className="flex flex-col items-center mb-8">
       {/* Side timers */}
-      <div className="flex items-center gap-3 w-full mb-8 min-w-0">
+      <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 sm:gap-3 w-full mb-8 min-w-0">
         {/* Left timer */}
         <button
           onClick={isLeftActive ? onToggle : onSwitch}
-          className={`flex-1 min-w-0 flex flex-col items-center py-5 px-2 rounded-2xl transition-all duration-300 ${
+          className={`min-w-0 flex flex-col items-center justify-center py-4 sm:py-5 px-2 sm:px-3 rounded-2xl transition-all duration-300 ${
             isLeftActive && isActive
               ? "bg-primary/10 border border-primary/30"
               : isLeftActive
@@ -104,12 +104,14 @@ export function DualTimer({
               : "bg-surface-container-low border border-transparent opacity-60"
           }`}
         >
-          <span className="font-data text-[10px] text-text-disabled uppercase tracking-widest mb-2">
+          <span className="font-data text-[9px] sm:text-[10px] text-text-disabled uppercase tracking-[0.18em] mb-2 text-center">
             Esquerdo
           </span>
           <TimerValue
             value={formatTime(leftSeconds)}
-            className={`font-display text-[28px] sm:text-[32px] font-light ${isLeftActive ? "text-primary" : "text-text-secondary"}`}
+            className={`w-full justify-center font-display text-[18px] min-[360px]:text-[20px] sm:text-[28px] font-light leading-none tracking-tight ${
+              isLeftActive ? "text-primary" : "text-text-secondary"
+            }`}
           />
           {isLeftActive && isActive && (
             <div className={`mt-1.5 w-2 h-2 rounded-full bg-primary ${lowPerformanceMode ? "" : "animate-pulse"}`} />
@@ -119,7 +121,7 @@ export function DualTimer({
         {/* Switch button */}
         <button
           onClick={onSwitch}
-          className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-surface-variant/30 border border-outline-variant/20 flex items-center justify-center text-text-secondary hover:text-primary hover:bg-surface-variant/50 transition-all active:scale-95 flex-shrink-0"
+          className="w-11 h-11 sm:w-14 sm:h-14 rounded-full bg-surface-variant/30 border border-outline-variant/20 flex items-center justify-center text-text-secondary hover:text-primary hover:bg-surface-variant/50 transition-all active:scale-95 flex-shrink-0"
         >
           <ArrowLeftRight className="w-4 h-4 sm:w-5 sm:h-5" strokeWidth={2} />
         </button>
@@ -127,7 +129,7 @@ export function DualTimer({
         {/* Right timer */}
         <button
           onClick={isRightActive ? onToggle : onSwitch}
-          className={`flex-1 min-w-0 flex flex-col items-center py-5 px-2 rounded-2xl transition-all duration-300 ${
+          className={`min-w-0 flex flex-col items-center justify-center py-4 sm:py-5 px-2 sm:px-3 rounded-2xl transition-all duration-300 ${
             isRightActive && isActive
               ? "bg-primary/10 border border-primary/30"
               : isRightActive
@@ -135,12 +137,14 @@ export function DualTimer({
               : "bg-surface-container-low border border-transparent opacity-60"
           }`}
         >
-          <span className="font-data text-[10px] text-text-disabled uppercase tracking-widest mb-2">
+          <span className="font-data text-[9px] sm:text-[10px] text-text-disabled uppercase tracking-[0.18em] mb-2 text-center">
             Direito
           </span>
           <TimerValue
             value={formatTime(rightSeconds)}
-            className={`font-display text-[28px] sm:text-[32px] font-light ${isRightActive ? "text-primary" : "text-text-secondary"}`}
+            className={`w-full justify-center font-display text-[18px] min-[360px]:text-[20px] sm:text-[28px] font-light leading-none tracking-tight ${
+              isRightActive ? "text-primary" : "text-text-secondary"
+            }`}
           />
           {isRightActive && isActive && (
             <div className={`mt-1.5 w-2 h-2 rounded-full bg-primary ${lowPerformanceMode ? "" : "animate-pulse"}`} />
