@@ -3,6 +3,7 @@
 import { Play, Pause, RotateCcw, ArrowLeftRight } from "lucide-react";
 import { useState, useRef, useCallback, useEffect } from "react";
 import { TimerValue } from "./TimerValue";
+import { useLowPerformanceMode } from "@/lib/hooks/useLowPerformanceMode";
 
 interface FeedingTimerProps {
   onTimeChange?: (seconds: number) => void;
@@ -86,6 +87,7 @@ export function DualTimer({
   const totalSeconds = leftSeconds + rightSeconds;
   const isLeftActive = activeSide === "left";
   const isRightActive = activeSide === "right";
+  const lowPerformanceMode = useLowPerformanceMode();
 
   return (
     <div className="flex flex-col items-center mb-8">
@@ -110,7 +112,7 @@ export function DualTimer({
             className={`font-display text-[28px] sm:text-[32px] font-light ${isLeftActive ? "text-primary" : "text-text-secondary"}`}
           />
           {isLeftActive && isActive && (
-            <div className="mt-1.5 w-2 h-2 rounded-full bg-primary animate-pulse" />
+            <div className={`mt-1.5 w-2 h-2 rounded-full bg-primary ${lowPerformanceMode ? "" : "animate-pulse"}`} />
           )}
         </button>
 
@@ -141,7 +143,7 @@ export function DualTimer({
             className={`font-display text-[28px] sm:text-[32px] font-light ${isRightActive ? "text-primary" : "text-text-secondary"}`}
           />
           {isRightActive && isActive && (
-            <div className="mt-1.5 w-2 h-2 rounded-full bg-primary animate-pulse" />
+            <div className={`mt-1.5 w-2 h-2 rounded-full bg-primary ${lowPerformanceMode ? "" : "animate-pulse"}`} />
           )}
         </button>
       </div>

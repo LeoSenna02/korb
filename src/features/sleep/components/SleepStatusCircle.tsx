@@ -4,6 +4,7 @@ import { Moon } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSleep } from "@/contexts/SleepContext";
 import { formatTime } from "@/lib/utils/format";
+import { useLowPerformanceMode } from "@/lib/hooks/useLowPerformanceMode";
 
 function formatElapsed(seconds: number): string {
   const h = Math.floor(seconds / 3600);
@@ -91,6 +92,7 @@ function RollingTimer({ value }: { value: string }) {
 
 export function SleepStatusCircle() {
   const { isActive, isPaused, startedAt, sleepType, elapsedSeconds } = useSleep();
+  const lowPerformanceMode = useLowPerformanceMode();
 
   if (!isActive || !startedAt) {
     return (
@@ -142,7 +144,7 @@ export function SleepStatusCircle() {
         </p>
 
         <div className="font-display text-[68px] leading-none text-text-primary mb-8 tracking-tighter font-light">
-          <RollingTimer value={formatElapsed(elapsedSeconds)} />
+          {lowPerformanceMode ? formatElapsed(elapsedSeconds) : <RollingTimer value={formatElapsed(elapsedSeconds)} />}
         </div>
 
         <div className="flex items-center gap-2 bg-surface-container-low border border-outline-variant/20 px-4 py-2 rounded-full">

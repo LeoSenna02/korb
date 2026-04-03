@@ -5,23 +5,23 @@ import { verifySessionToken, COOKIE_NAME } from "@/lib/auth/jwt";
 const PROTECTED_PREFIXES = ["/dashboard", "/baby", "/milestones", "/sleep"];
 const AUTH_PATHS = ["/login", "/registro", "/"];
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // ─── 1. Collect session tokens ─────────────────────────────────────
+  // ——— 1. Collect session tokens —————————————————————
   // New JWT cookie
   const token = request.cookies.get(COOKIE_NAME)?.value;
 
   // Legacy cookie cleanup (can be removed after migration)
   const hasLegacyCookie = request.cookies.has("korb_auth");
 
-  // ─── 2. Auth page logic ────────────────────────────────────────────
+  // ——— 2. Auth page logic —————————————————————————————
   const isAuthPage = AUTH_PATHS.some((path) => pathname === path);
   const isProtected = PROTECTED_PREFIXES.some((prefix) =>
     pathname.startsWith(prefix)
   );
 
-  // ─── 3. Authenticated → redirect away from auth pages ────────────
+  // ——— 3. Authenticated → redirect away from auth pages ———
   if (token && isAuthPage) {
     // Verify the token is actually valid (not just present)
     const payload = await verifySessionToken(token);
@@ -34,14 +34,14 @@ export async function middleware(request: NextRequest) {
     return response;
   }
 
-  // ─── 4. Not authenticated → redirect to login ─────────────────────
+  // ——— 4. Not authenticated → redirect to login —————————
   if (!token && isProtected) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("redirect", pathname);
     return NextResponse.redirect(loginUrl);
   }
 
-  // ─── 5. Token present but potentially invalid ────────────────────
+  // ——— 5. Token present but potentially invalid ———————————
   if (token && isProtected) {
     const payload = await verifySessionToken(token);
     if (!payload) {
@@ -63,7 +63,7 @@ export async function middleware(request: NextRequest) {
     });
   }
 
-  // ─── 6. Clean legacy cookies if present ──────────────────────────
+  // ——— 6. Clean legacy cookies if present ————————————————
   if (hasLegacyCookie) {
     const response = NextResponse.next();
     response.cookies.delete("korb_auth");
@@ -77,6 +77,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js|woff|woff2)).*)",
+    "/((?!_next/static|_next/image|_next/webpack-hmr|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js|woff|woff2)).*)",
   ],
 };

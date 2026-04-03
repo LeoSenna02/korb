@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useLowPerformanceMode } from "@/lib/hooks/useLowPerformanceMode";
 
 interface SheetProps {
   isOpen: boolean;
@@ -18,6 +19,8 @@ export function Sheet({
   subtitle,
   children,
 }: SheetProps) {
+  const lowPerformanceMode = useLowPerformanceMode();
+
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden";
@@ -38,7 +41,7 @@ export function Sheet({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60]"
+            className={`fixed inset-0 bg-black/60 z-[60] ${lowPerformanceMode ? "" : "backdrop-blur-sm"}`}
           />
 
           <motion.div
