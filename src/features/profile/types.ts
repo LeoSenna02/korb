@@ -6,6 +6,7 @@ import type {
   SleepRecord,
 } from "@/lib/db/types";
 import type { MilestoneRecord } from "@/features/milestones/types";
+import type { VaccineRecord } from "@/features/vaccines/types";
 
 export type CaregiverRole =
   | "mae"
@@ -58,6 +59,7 @@ export interface DataStats {
   totalSleeps: number;
   totalDiapers: number;
   totalGrowth: number;
+  totalVaccines: number;
   totalDays: number;
   lastBackup?: string;
 }
@@ -78,6 +80,7 @@ export interface BackupRecordCollection {
   diapers: DiaperRecord[];
   growth: GrowthRecord[];
   milestones: MilestoneRecord[];
+  vaccines: VaccineRecord[];
 }
 
 export interface BabyBackupPayload {
@@ -99,5 +102,6 @@ export interface ImportPreview {
     totalDiapers: number;
     totalGrowth: number;
     totalMilestones: number;
+    totalVaccines: number;
   };
 }

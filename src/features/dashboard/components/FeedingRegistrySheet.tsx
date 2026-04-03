@@ -12,6 +12,7 @@ import { saveFeeding } from "@/lib/db/repositories/feeding";
 import { useFeedingTimer } from "../hooks/useFeedingTimer";
 import { VolumeInput } from "./VolumeInput";
 import { TimerValue } from "./TimerValue";
+import { useLowPerformanceMode } from "@/lib/hooks/useLowPerformanceMode";
 
 interface FeedingRegistrySheetProps {
   isOpen: boolean;
@@ -38,6 +39,7 @@ const section = {
 
 export function FeedingRegistrySheet({ isOpen, onClose, onSaved }: FeedingRegistrySheetProps) {
   const { baby } = useBaby();
+  const lowPerformanceMode = useLowPerformanceMode();
   const [isSaving, setIsSaving] = useState(false);
   const [type, setType] = useState<"left" | "right" | "bottle" | "both">("both");
   const [notes, setNotes] = useState("");
@@ -101,6 +103,7 @@ export function FeedingRegistrySheet({ isOpen, onClose, onSaved }: FeedingRegist
 
   const isDual = type === "both";
   const isBottle = type === "bottle";
+  const shouldAnimateContent = !lowPerformanceMode;
 
   function toggleTimer() {
     if (isActive) {
@@ -119,14 +122,22 @@ export function FeedingRegistrySheet({ isOpen, onClose, onSaved }: FeedingRegist
     >
       <motion.div
         variants={container}
-        initial="hidden"
-        animate="show"
+        initial={shouldAnimateContent ? "hidden" : false}
+        animate={shouldAnimateContent ? "show" : undefined}
       >
-        <motion.section variants={section}>
+        <motion.section
+          variants={shouldAnimateContent ? section : undefined}
+          initial={false}
+          animate={shouldAnimateContent ? "show" : undefined}
+        >
           <FeedingTypeSelector value={type} onChange={setType} />
         </motion.section>
 
-        <motion.section variants={section}>
+        <motion.section
+          variants={shouldAnimateContent ? section : undefined}
+          initial={false}
+          animate={shouldAnimateContent ? "show" : undefined}
+        >
           {isBottle ? (
             <VolumeInput value={volumeMl} onChange={setVolumeMl} />
           ) : isDual ? (
@@ -159,7 +170,11 @@ export function FeedingRegistrySheet({ isOpen, onClose, onSaved }: FeedingRegist
           )}
         </motion.section>
 
-        <motion.section variants={section}>
+        <motion.section
+          variants={shouldAnimateContent ? section : undefined}
+          initial={false}
+          animate={shouldAnimateContent ? "show" : undefined}
+        >
           {!showNotes ? (
             <button
               onClick={() => setShowNotes(true)}
@@ -182,7 +197,12 @@ export function FeedingRegistrySheet({ isOpen, onClose, onSaved }: FeedingRegist
           )}
         </motion.section>
 
-        <motion.div variants={section} className="pb-8">
+        <motion.div
+          variants={shouldAnimateContent ? section : undefined}
+          initial={false}
+          animate={shouldAnimateContent ? "show" : undefined}
+          className="pb-8"
+        >
           <button
             onClick={handleSave}
             disabled={isSaving || (durationSeconds === 0 && volumeMl === 0)}

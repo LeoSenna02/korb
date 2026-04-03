@@ -1,5 +1,5 @@
 import type { Baby } from "@/lib/db/types";
-import { parseDateLocal } from "@/lib/utils/format";
+import { getAgeInCompletedMonths, parseDateLocal } from "@/lib/utils/format";
 import { WHO_GROWTH_STANDARDS } from "../data/who-growth-standards";
 import type {
   GrowthChartDataPoint,
@@ -49,25 +49,6 @@ function normalizeToLocalCalendarDate(date: string) {
 
 function isValidDate(date: Date) {
   return Number.isFinite(date.getTime());
-}
-
-export function getAgeInCompletedMonths(birthDate: string, measuredAt: string) {
-  const birth = normalizeToLocalCalendarDate(birthDate);
-  const measured = normalizeToLocalCalendarDate(measuredAt);
-
-  if (!isValidDate(birth) || !isValidDate(measured) || measured < birth) {
-    return null;
-  }
-
-  const yearDiff = measured.getFullYear() - birth.getFullYear();
-  const monthDiff = measured.getMonth() - birth.getMonth();
-  let completedMonths = yearDiff * 12 + monthDiff;
-
-  if (measured.getDate() < birth.getDate()) {
-    completedMonths -= 1;
-  }
-
-  return completedMonths;
 }
 
 export function getGrowthMetricStatus(

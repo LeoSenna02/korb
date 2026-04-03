@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Baby, Droplet, Moon, Ruler } from "lucide-react";
+import { Baby, Droplet, Moon, Ruler, Syringe } from "lucide-react";
 import { DiaperRegistrySheet } from "./DiaperRegistrySheet";
 import { FeedingRegistrySheet } from "./FeedingRegistrySheet";
 import { GrowthRegistrySheet } from "./GrowthRegistrySheet";
@@ -70,6 +70,13 @@ export function QuickActionsGrid({ onSaved }: QuickActionsGridProps) {
       color: "bg-surface-variant text-text-primary",
       onClick: () => setIsGrowthSheetOpen(true),
     },
+    {
+      title: "Vacinas",
+      subtitle: "CALENDARIO",
+      icon: Syringe,
+      color: "bg-[#88AFC7]/10 text-[#88AFC7]",
+      onClick: () => router.push("/vaccines"),
+    },
   ];
 
   return (
@@ -82,13 +89,14 @@ export function QuickActionsGrid({ onSaved }: QuickActionsGridProps) {
       >
         {actions.map((action) => {
           const Icon = action.icon;
+          const isFullWidth = action.title === "Vacinas";
           return (
             <motion.button
               key={action.title}
               variants={item}
               onClick={action.onClick}
               whileTap={{ scale: 0.97 }}
-              className="flex flex-col items-start p-5 bg-surface-container-low rounded-3xl border border-surface-variant/30 hover:bg-surface-variant/20 transition-colors duration-200 text-left"
+              className={`flex flex-col items-start p-5 bg-surface-container-low rounded-3xl border border-surface-variant/30 hover:bg-surface-variant/20 transition-colors duration-200 text-left${isFullWidth ? " col-span-2" : ""}`}
             >
               <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-4 ${action.color}`}>
                 <Icon className="w-5 h-5" strokeWidth={2} />

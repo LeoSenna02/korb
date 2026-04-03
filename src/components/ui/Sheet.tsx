@@ -20,6 +20,9 @@ export function Sheet({
   children,
 }: SheetProps) {
   const lowPerformanceMode = useLowPerformanceMode();
+  const sheetTransition = lowPerformanceMode
+    ? { duration: 0.18, ease: [0.2, 0.8, 0.2, 1] as const }
+    : { type: "spring" as const, damping: 25, stiffness: 200 };
 
   useEffect(() => {
     if (isOpen) {
@@ -48,8 +51,8 @@ export function Sheet({
             initial={{ y: "100%" }}
             animate={{ y: 0 }}
             exit={{ y: "100%" }}
-            transition={{ type: "spring", damping: 25, stiffness: 200 }}
-            className="fixed bottom-0 left-2 right-2 bg-surface-container-low rounded-t-3xl z-[70] px-6 pt-3 pb-safe max-h-[90vh] overflow-y-auto no-scrollbar shadow-2xl"
+            transition={sheetTransition}
+            className="fixed bottom-0 left-2 right-2 bg-surface-container-low rounded-t-3xl z-[70] px-6 pt-3 pb-safe max-h-[90vh] overflow-y-auto no-scrollbar shadow-2xl transform-gpu will-change-transform"
           >
             {/* Drag handle */}
             <div className="flex justify-center mb-4">

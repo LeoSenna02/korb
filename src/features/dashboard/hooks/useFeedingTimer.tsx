@@ -7,9 +7,19 @@ const STORAGE_KEY = "korb_feeding_state";
 interface PersistedFeedingState {
   startedAt: string;
   type: "left" | "right" | "bottle" | "both";
+  activeSide: "left" | "right";
   leftSeconds: number;
   rightSeconds: number;
   isPaused: boolean;
+  updatedAt: string;
+}
+
+interface InitialFeedingTimerState {
+  activeSide: "left" | "right";
+  leftSeconds: number;
+  rightSeconds: number;
+  isActive: boolean;
+  startedAt: string | null;
 }
 
 function loadPersistedFeedingState(): PersistedFeedingState | null {
@@ -30,6 +40,74 @@ function persistFeedingState(state: PersistedFeedingState | null) {
   }
 }
 
+function applyElapsedWhileAway(
+  state: PersistedFeedingState
+): Pick<PersistedFeedingState, "leftSeconds" | "rightSeconds"> {
+  if (state.isPaused) {
+    return {
+      leftSeconds: state.leftSeconds,
+      rightSeconds: state.rightSeconds,
+    };
+  }
+
+  const elapsedSeconds = Math.max(
+    0,
+    Math.floor((Date.now() - new Date(state.updatedAt).getTime()) / 1000)
+  );
+
+  if (elapsedSeconds === 0) {
+    return {
+      leftSeconds: state.leftSeconds,
+      rightSeconds: state.rightSeconds,
+    };
+  }
+
+  if (state.activeSide === "left") {
+    return {
+      leftSeconds: state.leftSeconds + elapsedSeconds,
+      rightSeconds: state.rightSeconds,
+    };
+  }
+
+  return {
+    leftSeconds: state.leftSeconds,
+    rightSeconds: state.rightSeconds + elapsedSeconds,
+  };
+}
+
+function getInitialFeedingTimerState(): InitialFeedingTimerState {
+  if (typeof window === "undefined") {
+    return {
+      activeSide: "left",
+      leftSeconds: 0,
+      rightSeconds: 0,
+      isActive: false,
+      startedAt: null,
+    };
+  }
+
+  const saved = loadPersistedFeedingState();
+  if (!saved) {
+    return {
+      activeSide: "left",
+      leftSeconds: 0,
+      rightSeconds: 0,
+      isActive: false,
+      startedAt: null,
+    };
+  }
+
+  const hydratedState = applyElapsedWhileAway(saved);
+
+  return {
+    activeSide: saved.activeSide,
+    leftSeconds: hydratedState.leftSeconds,
+    rightSeconds: hydratedState.rightSeconds,
+    isActive: !saved.isPaused,
+    startedAt: saved.startedAt,
+  };
+}
+
 interface FeedingTimerContextValue {
   leftSeconds: number;
   rightSeconds: number;
@@ -46,27 +124,17 @@ interface FeedingTimerContextValue {
 const FeedingTimerContext = createContext<FeedingTimerContextValue | null>(null);
 
 export function FeedingTimerProvider({ children }: { children: React.ReactNode }) {
-  const [isActive, setIsActive] = useState(false);
-  const [activeSide, setActiveSide] = useState<"left" | "right">("left");
-  const [leftSeconds, setLeftSeconds] = useState(0);
-  const [rightSeconds, setRightSeconds] = useState(0);
-  const [startedAt, setStartedAt] = useState<string | null>(null);
+  const [initialState] = useState(getInitialFeedingTimerState);
+  const [isActive, setIsActive] = useState(initialState.isActive);
+  const [activeSide, setActiveSide] = useState<"left" | "right">(
+    initialState.activeSide
+  );
+  const [leftSeconds, setLeftSeconds] = useState(initialState.leftSeconds);
+  const [rightSeconds, setRightSeconds] = useState(initialState.rightSeconds);
+  const [startedAt, setStartedAt] = useState<string | null>(initialState.startedAt);
 
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const startedAtRef = useRef<string | null>(null);
-
-  // Load persisted state on mount
-  useEffect(() => {
-    const saved = loadPersistedFeedingState();
-    if (saved) {
-      setActiveSide("left");
-      setLeftSeconds(saved.leftSeconds);
-      setRightSeconds(saved.rightSeconds);
-      startedAtRef.current = saved.startedAt;
-      setStartedAt(saved.startedAt);
-      setIsActive(!saved.isPaused);
-    }
-  }, []);
+  const startedAtRef = useRef<string | null>(initialState.startedAt);
 
   // Run interval when active
   useEffect(() => {
@@ -99,12 +167,14 @@ export function FeedingTimerProvider({ children }: { children: React.ReactNode }
       persistFeedingState({
         startedAt: startedAtRef.current || new Date().toISOString(),
         type: "both",
+        activeSide,
         leftSeconds,
         rightSeconds,
         isPaused: !isActive,
+        updatedAt: new Date().toISOString(),
       });
     }
-  }, [leftSeconds, rightSeconds, isActive, startedAt]);
+  }, [leftSeconds, rightSeconds, activeSide, isActive, startedAt]);
 
   const start = useCallback(() => {
     if (!startedAtRef.current) {

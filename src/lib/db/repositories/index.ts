@@ -19,6 +19,13 @@ export {
   deleteMilestone,
   getMilestonesProgress,
 } from "./milestone";
+export {
+  saveVaccine,
+  updateVaccine,
+  clearVaccineApplication,
+  getVaccinesByBabyId,
+  deleteVaccine,
+} from "./vaccine";
 export { getRecentActivities } from "./activity";
 export { getReportFeedings, getReportSleeps, getReportDiapers, getReportGrowth } from "./reports";
 export {

@@ -108,7 +108,11 @@ export function BabySummarySection({
 }: BabySummarySectionProps) {
   const age = calculateBabyAge(birthDate);
   const totalRecords =
-    counts.totalFeedings + counts.totalSleeps + counts.totalDiapers + counts.totalGrowth;
+    counts.totalFeedings +
+    counts.totalSleeps +
+    counts.totalDiapers +
+    counts.totalGrowth +
+    counts.totalVaccines;
 
   const avgFeedingsPerDay =
     totalDays > 0 ? (counts.totalFeedings / totalDays).toFixed(1) : "0";

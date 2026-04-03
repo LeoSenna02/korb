@@ -47,6 +47,7 @@ export function useProfileData(): UseProfileDataReturn {
     totalSleeps: 0,
     totalDiapers: 0,
     totalGrowth: 0,
+    totalVaccines: 0,
   });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -58,7 +59,13 @@ export function useProfileData(): UseProfileDataReturn {
 
   useEffect(() => {
     if (!baby) {
-      setCounts({ totalFeedings: 0, totalSleeps: 0, totalDiapers: 0, totalGrowth: 0 });
+      setCounts({
+        totalFeedings: 0,
+        totalSleeps: 0,
+        totalDiapers: 0,
+        totalGrowth: 0,
+        totalVaccines: 0,
+      });
       setIsLoading(false);
       return;
     }

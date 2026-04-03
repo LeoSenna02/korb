@@ -7,7 +7,7 @@ import {
   setupHiDPICanvas,
 } from "@/components/charts/canvas.utils";
 import { useResponsiveCanvasSize } from "@/components/charts/useResponsiveCanvasSize";
-import { REPORT_CHART_MIN_WIDTH, REPORT_TIMELINE_HEIGHT } from "./report-chart.utils";
+import { REPORT_TIMELINE_HEIGHT } from "./report-chart.utils";
 
 interface DiaperBreakdownBarCanvasProps {
   color: string;
@@ -24,7 +24,7 @@ export function DiaperBreakdownBarCanvas({
 }: DiaperBreakdownBarCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const { containerRef, width } = useResponsiveCanvasSize({
-    minWidth: REPORT_CHART_MIN_WIDTH,
+    minWidth: 0,
   });
   const [isActive, setIsActive] = useState(false);
 
@@ -59,9 +59,10 @@ export function DiaperBreakdownBarCanvas({
   }, [color, isActive, percent, width]);
 
   const fillWidth = (percent / 100) * width;
+  const tooltipMaxLeft = Math.max(width - 32, 32);
 
   return (
-    <div ref={containerRef} className="relative flex-1">
+    <div ref={containerRef} className="relative flex-1 min-w-0">
       <canvas
         ref={canvasRef}
         role="img"
@@ -79,7 +80,7 @@ export function DiaperBreakdownBarCanvas({
         <div
           className="pointer-events-none absolute rounded-xl border border-outline-variant/20 bg-[#1E1F26]/95 px-3 py-2 shadow-lg"
           style={{
-            left: clamp(Math.max(fillWidth, 24), 76, width - 76),
+            left: clamp(Math.max(fillWidth, 24), 32, tooltipMaxLeft),
             top: -8,
             transform: "translate(-50%, -100%)",
           }}

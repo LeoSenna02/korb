@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { verifySessionToken, COOKIE_NAME } from "@/lib/auth/jwt";
 
-const PROTECTED_PREFIXES = ["/dashboard", "/baby", "/milestones", "/sleep"];
+const PROTECTED_PREFIXES = ["/dashboard", "/baby", "/milestones", "/sleep", "/vaccines"];
 const AUTH_PATHS = ["/login", "/registro", "/"];
 
 export async function proxy(request: NextRequest) {

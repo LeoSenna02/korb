@@ -86,6 +86,7 @@ export function createImportPreview(
     totalDiapers: payload.records.diapers.length,
     totalGrowth: payload.records.growth.length,
     totalMilestones: payload.records.milestones.length,
+    totalVaccines: payload.records.vaccines.length,
   };
 
   return {
@@ -97,7 +98,8 @@ export function createImportPreview(
       counts.totalSleeps +
       counts.totalDiapers +
       counts.totalGrowth +
-      counts.totalMilestones,
+      counts.totalMilestones +
+      counts.totalVaccines,
     counts,
   };
 }

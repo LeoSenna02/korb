@@ -37,7 +37,7 @@ export function DiaperCanvasChart({ breakdown }: DiaperCanvasChartProps) {
 
       <div className="bg-surface-container-low rounded-2xl p-4 space-y-3">
         {diaperTypes.map((type) => (
-          <div key={type.key} className="flex items-center gap-3">
+          <div key={type.key} className="flex items-center gap-3 min-w-0">
             <div className="w-16 flex-shrink-0">
               <span className="font-data text-[10px] uppercase tracking-wider text-text-disabled">
                 {type.label}

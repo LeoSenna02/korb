@@ -130,7 +130,8 @@ export function DataManagementSection({
     stats.totalFeedings +
     stats.totalSleeps +
     stats.totalDiapers +
-    stats.totalGrowth;
+    stats.totalGrowth +
+    stats.totalVaccines;
   const isImportBusy = isPreparingImport || isImporting;
 
   return (

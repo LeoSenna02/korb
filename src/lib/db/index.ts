@@ -1,7 +1,7 @@
 import { openDB, type IDBPDatabase } from "idb";
 
 const DB_NAME = "korb-db";
-const DB_VERSION = 5;
+const DB_VERSION = 6;
 
 let dbPromise: Promise<IDBPDatabase> | null = null;
 
@@ -73,6 +73,21 @@ export function getDB(): Promise<IDBPDatabase> {
           const s = tx.objectStore("milestones");
           if (!s.indexNames.contains("byBabyIdAndCreated")) s.createIndex("byBabyIdAndCreated", ["babyId", "createdAt"]);
           if (!s.indexNames.contains("byBabyIdAndCategory")) s.createIndex("byBabyIdAndCategory", ["babyId", "category"]);
+        }
+
+        if (!db.objectStoreNames.contains("vaccines")) {
+          const s = db.createObjectStore("vaccines", { keyPath: "id" });
+          s.createIndex("byBabyId", "babyId");
+          s.createIndex("byCreatedAt", "createdAt");
+          s.createIndex("byBabyIdAndCreated", ["babyId", "createdAt"]);
+          s.createIndex("byBabyIdAndScheduledMonth", ["babyId", "scheduledMonth"]);
+          s.createIndex("byBabyIdAndAppliedDate", ["babyId", "appliedDate"]);
+        } else if (oldVersion > 0 && oldVersion < 6 && tx) {
+          const s = tx.objectStore("vaccines");
+          if (!s.indexNames.contains("byCreatedAt")) s.createIndex("byCreatedAt", "createdAt");
+          if (!s.indexNames.contains("byBabyIdAndCreated")) s.createIndex("byBabyIdAndCreated", ["babyId", "createdAt"]);
+          if (!s.indexNames.contains("byBabyIdAndScheduledMonth")) s.createIndex("byBabyIdAndScheduledMonth", ["babyId", "scheduledMonth"]);
+          if (!s.indexNames.contains("byBabyIdAndAppliedDate")) s.createIndex("byBabyIdAndAppliedDate", ["babyId", "appliedDate"]);
         }
       },
     });

@@ -38,6 +38,15 @@ interface PersistedSleepState {
   pauseStartTime: number | null;
 }
 
+interface InitialSleepState {
+  startedAt: string | null;
+  sleepType: SleepType;
+  elapsedSeconds: number;
+  isPaused: boolean;
+  pausedDurationMs: number;
+  pauseStartTime: number | null;
+}
+
 function loadPersistedState(): PersistedSleepState | null {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -56,48 +65,67 @@ function persistState(state: PersistedSleepState | null) {
   }
 }
 
+function getInitialSleepState(): InitialSleepState {
+  if (typeof window === "undefined") {
+    return {
+      startedAt: null,
+      sleepType: "nap",
+      elapsedSeconds: 0,
+      isPaused: false,
+      pausedDurationMs: 0,
+      pauseStartTime: null,
+    };
+  }
+
+  const saved = loadPersistedState();
+  if (!saved) {
+    return {
+      startedAt: null,
+      sleepType: "nap",
+      elapsedSeconds: 0,
+      isPaused: false,
+      pausedDurationMs: 0,
+      pauseStartTime: null,
+    };
+  }
+
+  const elapsed = Math.floor(
+    (Date.now() -
+      new Date(saved.startedAt).getTime() -
+      saved.pausedDurationMs -
+      (saved.isPaused && saved.pauseStartTime
+        ? Date.now() - saved.pauseStartTime
+        : 0)) / 1000
+  );
+
+  return {
+    startedAt: saved.startedAt,
+    sleepType: saved.sleepType,
+    elapsedSeconds: Math.max(0, elapsed),
+    isPaused: saved.isPaused,
+    pausedDurationMs: saved.pausedDurationMs,
+    pauseStartTime: saved.pauseStartTime,
+  };
+}
+
 interface SleepProviderProps {
   children: React.ReactNode;
 }
 
 export function SleepProvider({ children }: SleepProviderProps) {
   const { baby } = useBaby();
-  const [initialized, setInitialized] = useState(false);
-  const [startedAt, setStartedAt] = useState<string | null>(null);
-  const [sleepType, setSleepType] = useState<SleepType>("nap");
-  const [elapsedSeconds, setElapsedSeconds] = useState(0);
-  const [isPaused, setIsPaused] = useState(false);
+  const [initialState] = useState(getInitialSleepState);
+  const [startedAt, setStartedAt] = useState<string | null>(initialState.startedAt);
+  const [sleepType, setSleepType] = useState<SleepType>(initialState.sleepType);
+  const [elapsedSeconds, setElapsedSeconds] = useState(initialState.elapsedSeconds);
+  const [isPaused, setIsPaused] = useState(initialState.isPaused);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const pausedDurationRef = useRef(0);
-  const pauseStartTimeRef = useRef<number | null>(null);
+  const pausedDurationRef = useRef(initialState.pausedDurationMs);
+  const pauseStartTimeRef = useRef<number | null>(initialState.pauseStartTime);
 
   useEffect(() => {
-    const saved = loadPersistedState();
-    if (saved) {
-      setStartedAt(saved.startedAt);
-      setSleepType(saved.sleepType);
-      setIsPaused(saved.isPaused);
-      pausedDurationRef.current = saved.pausedDurationMs;
-      pauseStartTimeRef.current = saved.pauseStartTime;
-
-      const elapsed = Math.floor(
-        (Date.now() - new Date(saved.startedAt).getTime() - saved.pausedDurationMs -
-          (saved.isPaused && saved.pauseStartTime
-            ? Date.now() - saved.pauseStartTime
-            : 0)) / 1000
-      );
-      setElapsedSeconds(Math.max(0, elapsed));
-    }
-    setInitialized(true);
-  }, []);
-
-  const persistRef = useRef(persistState);
-  persistRef.current = persistState;
-
-  useEffect(() => {
-    if (!initialized) return;
     if (startedAt) {
-      persistRef.current({
+      persistState({
         startedAt,
         sleepType,
         isPaused,
@@ -105,9 +133,9 @@ export function SleepProvider({ children }: SleepProviderProps) {
         pauseStartTime: pauseStartTimeRef.current,
       });
     } else {
-      persistRef.current(null);
+      persistState(null);
     }
-  }, [initialized, startedAt, sleepType, isPaused]);
+  }, [startedAt, sleepType, isPaused]);
 
   const tick = useCallback(() => {
     if (startedAt) {
@@ -119,7 +147,6 @@ export function SleepProvider({ children }: SleepProviderProps) {
   }, [startedAt]);
 
   useEffect(() => {
-    if (!initialized) return;
     if (startedAt && !isPaused) {
       intervalRef.current = setInterval(tick, 1000);
     } else {
@@ -134,7 +161,7 @@ export function SleepProvider({ children }: SleepProviderProps) {
         intervalRef.current = null;
       }
     };
-  }, [initialized, startedAt, isPaused, tick]);
+  }, [startedAt, isPaused, tick]);
 
   useEffect(() => {
     if (!startedAt) {

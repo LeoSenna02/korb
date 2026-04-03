@@ -10,6 +10,26 @@ export function parseDateLocal(dateStr: string): Date {
   return new Date(year, month - 1, day, 12, 0, 0, 0);
 }
 
+function normalizeToLocalCalendarDate(dateStr: string): Date {
+  const parsed = /^\d{4}-\d{2}-\d{2}$/.test(dateStr)
+    ? parseDateLocal(dateStr)
+    : new Date(dateStr);
+
+  if (!Number.isFinite(parsed.getTime())) {
+    return parsed;
+  }
+
+  return new Date(
+    parsed.getFullYear(),
+    parsed.getMonth(),
+    parsed.getDate(),
+    12,
+    0,
+    0,
+    0
+  );
+}
+
 export function formatDate(isoString: string): string {
   const isDateOnly = /^\d{4}-\d{2}-\d{2}$/.test(isoString);
   const date = isDateOnly ? parseDateLocal(isoString) : new Date(isoString);
@@ -111,6 +131,32 @@ export function calculateBabyAge(birthDate: string): string {
   const y = years === 1 ? "ano" : "anos";
   const m = remainingMonths === 1 ? "mes" : "meses";
   return `${years} ${y} e ${remainingMonths} ${m}`;
+}
+
+export function getAgeInCompletedMonths(
+  birthDate: string,
+  referenceDate: string
+): number | null {
+  const birth = normalizeToLocalCalendarDate(birthDate);
+  const measured = normalizeToLocalCalendarDate(referenceDate);
+
+  if (
+    !Number.isFinite(birth.getTime()) ||
+    !Number.isFinite(measured.getTime()) ||
+    measured < birth
+  ) {
+    return null;
+  }
+
+  const yearDiff = measured.getFullYear() - birth.getFullYear();
+  const monthDiff = measured.getMonth() - birth.getMonth();
+  let completedMonths = yearDiff * 12 + monthDiff;
+
+  if (measured.getDate() < birth.getDate()) {
+    completedMonths -= 1;
+  }
+
+  return completedMonths;
 }
 
 export function timeAgo(dateStr: string): string {
