@@ -130,6 +130,7 @@ export function DualTimer({
   onToggle,
   onSwitch,
   onReset,
+  animateValue = false,
 }: {
   leftSeconds: number;
   rightSeconds: number;
@@ -138,6 +139,7 @@ export function DualTimer({
   onToggle: () => void;
   onSwitch: () => void;
   onReset: () => void;
+  animateValue?: boolean;
 }) {
   const totalSeconds = leftSeconds + rightSeconds;
   const isLeftActive = activeSide === "left";
@@ -164,6 +166,7 @@ export function DualTimer({
           </span>
           <TimerValue
             value={formatTime(leftSeconds)}
+            animated={animateValue}
             className={`w-full justify-center font-display text-[18px] min-[360px]:text-[20px] sm:text-[28px] font-light leading-none tracking-tight ${
               isLeftActive ? "text-primary" : "text-text-secondary"
             }`}
@@ -197,6 +200,7 @@ export function DualTimer({
           </span>
           <TimerValue
             value={formatTime(rightSeconds)}
+            animated={animateValue}
             className={`w-full justify-center font-display text-[18px] min-[360px]:text-[20px] sm:text-[28px] font-light leading-none tracking-tight ${
               isRightActive ? "text-primary" : "text-text-secondary"
             }`}
@@ -214,6 +218,7 @@ export function DualTimer({
         </span>
         <TimerValue
           value={formatTime(totalSeconds)}
+          animated={animateValue}
           className="font-display text-[24px] sm:text-[28px] font-light text-text-primary"
         />
       </div>

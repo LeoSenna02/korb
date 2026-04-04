@@ -1,4 +1,5 @@
 export { Input } from "./Input";
+export { AnimatedTimeValue } from "./AnimatedTimeValue";
 export { Button } from "./Button";
 export { DateInput } from "./DateInput";
 export { TimeInput } from "./TimeInput";

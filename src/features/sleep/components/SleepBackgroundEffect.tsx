@@ -1,8 +1,21 @@
 "use client";
 
 import { useSleep } from "@/contexts/SleepContext";
-import { useEffect, useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+
+function detectCoarsePointer(): boolean {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  return window.matchMedia("(pointer: coarse)").matches;
+}
+
+function pseudoRandom(seed: number): number {
+  const value = Math.sin(seed * 9999.123 + 0.12345) * 10000;
+  return value - Math.floor(value);
+}
 
 /**
  * SleepBackgroundEffect
@@ -11,31 +24,24 @@ import { motion, AnimatePresence } from "framer-motion";
  */
 export function SleepBackgroundEffect() {
   const { isActive, isPaused } = useSleep();
-  const [shouldRender, setShouldRender] = useState(false);
+  const [isCoarsePointer] = useState(detectCoarsePointer);
 
   // Mantém o componente no DOM por um tempo após desativar para a animação de saída (fade out)
-  useEffect(() => {
-    if (isActive) {
-      setShouldRender(true);
-    } else {
-      const timer = setTimeout(() => setShouldRender(false), 1200);
-      return () => clearTimeout(timer);
-    }
-  }, [isActive]);
-
   // Gera posições e tamanhos aleatórios estáveis para as "estrelas"
   const stars = useMemo(() => {
-    return Array.from({ length: 24 }).map((_, i) => ({
-      id: i,
-      x: `${Math.random() * 100}%`,
-      y: `${Math.random() * 100}%`,
-      size: Math.random() * 2 + 1,
-      delay: Math.random() * 5,
-      duration: 3 + Math.random() * 4,
-    }));
-  }, []);
+    const starCount = isCoarsePointer ? 12 : 24;
 
-  if (!shouldRender) return null;
+    return Array.from({ length: starCount }).map((_, i) => ({
+      id: i,
+      x: `${pseudoRandom(i + 1) * 100}%`,
+      y: `${pseudoRandom(i + 101) * 100}%`,
+      size: pseudoRandom(i + 201) * (isCoarsePointer ? 1.4 : 2) + 1,
+      delay: pseudoRandom(i + 301) * 5,
+      duration:
+        (isCoarsePointer ? 4.5 : 3) +
+        pseudoRandom(i + 401) * (isCoarsePointer ? 3 : 4),
+    }));
+  }, [isCoarsePointer]);
 
   return (
     <div className="absolute inset-0 pointer-events-none overflow-hidden select-none">
@@ -51,47 +57,47 @@ export function SleepBackgroundEffect() {
             {/* Blobs de Cores Orgânicos (Aurora/Névoa) */}
             <motion.div
               animate={isPaused ? {} : {
-                x: [-20, 20, -10, 30, -20],
-                y: [10, -20, 30, -10, 10],
-                scale: [1, 1.1, 0.9, 1.05, 1],
+                x: isCoarsePointer ? [-10, 12, -8] : [-20, 20, -10, 30, -20],
+                y: isCoarsePointer ? [8, -12, 8] : [10, -20, 30, -10, 10],
+                scale: isCoarsePointer ? [1, 1.04, 1] : [1, 1.1, 0.9, 1.05, 1],
               }}
               transition={{
-                duration: 25,
+                duration: isCoarsePointer ? 30 : 25,
                 repeat: Infinity,
                 ease: "linear",
               }}
               className="absolute top-[-10%] left-[-10%] w-[80%] h-[80%] rounded-full opacity-20"
               style={{
                 background: "radial-gradient(circle, #7B9E87 0%, transparent 70%)",
-                filter: "blur(80px)",
+                filter: `blur(${isCoarsePointer ? 60 : 80}px)`,
               }}
             />
 
             <motion.div
               animate={isPaused ? {} : {
-                x: [30, -10, 20, -20, 30],
-                y: [-30, 20, -10, 40, -30],
-                scale: [1.1, 0.9, 1, 0.95, 1.1],
+                x: isCoarsePointer ? [18, -8, 18] : [30, -10, 20, -20, 30],
+                y: isCoarsePointer ? [-16, 14, -16] : [-30, 20, -10, 40, -30],
+                scale: isCoarsePointer ? [1.04, 0.98, 1.04] : [1.1, 0.9, 1, 0.95, 1.1],
               }}
               transition={{
-                duration: 30,
+                duration: isCoarsePointer ? 34 : 30,
                 repeat: Infinity,
                 ease: "linear",
               }}
               className="absolute bottom-[-10%] right-[-10%] w-[90%] h-[90%] rounded-full opacity-15"
               style={{
                 background: "radial-gradient(circle, #7A5F3A 0%, transparent 70%)",
-                filter: "blur(100px)",
+                filter: `blur(${isCoarsePointer ? 72 : 100}px)`,
               }}
             />
 
             <motion.div
               animate={isPaused ? {} : {
-                scale: [1, 1.2, 1],
-                opacity: [0.1, 0.2, 0.1],
+                scale: isCoarsePointer ? [1, 1.08, 1] : [1, 1.2, 1],
+                opacity: isCoarsePointer ? [0.08, 0.14, 0.08] : [0.1, 0.2, 0.1],
               }}
               transition={{
-                duration: 12,
+                duration: isCoarsePointer ? 16 : 12,
                 repeat: Infinity,
                 ease: "easeInOut",
               }}
@@ -101,7 +107,7 @@ export function SleepBackgroundEffect() {
                 className="w-[120%] aspect-square rounded-full"
                 style={{
                   background: "radial-gradient(circle, rgba(147, 131, 237, 0.1) 0%, transparent 60%)",
-                  filter: "blur(60px)",
+                  filter: `blur(${isCoarsePointer ? 42 : 60}px)`,
                 }}
               />
             </motion.div>
@@ -119,8 +125,8 @@ export function SleepBackgroundEffect() {
                     height: star.size,
                   }}
                   animate={{
-                    opacity: [0.1, 0.6, 0.1],
-                    scale: [1, 1.3, 1],
+                    opacity: [0.1, isCoarsePointer ? 0.38 : 0.6, 0.1],
+                    scale: [1, isCoarsePointer ? 1.18 : 1.3, 1],
                   }}
                   transition={{
                     duration: star.duration,
@@ -145,4 +151,3 @@ export function SleepBackgroundEffect() {
     </div>
   );
 }
-

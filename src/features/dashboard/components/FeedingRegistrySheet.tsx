@@ -51,6 +51,7 @@ export function FeedingRegistrySheet({ isOpen, onClose, onSaved }: FeedingRegist
     rightSeconds,
     activeSide,
     isActive,
+    startedAt,
     start,
     pause,
     reset,
@@ -70,6 +71,12 @@ export function FeedingRegistrySheet({ isOpen, onClose, onSaved }: FeedingRegist
         else if (rightSeconds > 0) finalType = "right";
       }
 
+      const fallbackStartedAt = new Date(Date.now() - durationSeconds * 1000).toISOString();
+      const recordStartedAt =
+        finalType === "bottle"
+          ? new Date().toISOString()
+          : (startedAt ?? fallbackStartedAt);
+
       await saveFeeding({
         babyId: baby.id,
         type: finalType,
@@ -78,7 +85,7 @@ export function FeedingRegistrySheet({ isOpen, onClose, onSaved }: FeedingRegist
         rightSeconds: finalType === "both" ? (rightSeconds || undefined) : undefined,
         volumeMl: finalType === "bottle" ? (volumeMl || undefined) : undefined,
         notes: notes.trim() || undefined,
-        startedAt: new Date(Date.now() - durationSeconds * 1000).toISOString(),
+        startedAt: recordStartedAt,
       });
       reset();
       onSaved?.();
@@ -104,6 +111,7 @@ export function FeedingRegistrySheet({ isOpen, onClose, onSaved }: FeedingRegist
   const isDual = type === "both";
   const isBottle = type === "bottle";
   const shouldAnimateContent = !lowPerformanceMode;
+  const canSave = isBottle ? volumeMl > 0 : durationSeconds > 0;
 
   function toggleTimer() {
     if (isActive) {
@@ -146,6 +154,7 @@ export function FeedingRegistrySheet({ isOpen, onClose, onSaved }: FeedingRegist
               rightSeconds={rightSeconds}
               activeSide={activeSide}
               isActive={isActive}
+              animateValue={!lowPerformanceMode}
               onToggle={toggleTimer}
               onSwitch={switchSide}
               onReset={handleReset}
@@ -154,6 +163,7 @@ export function FeedingRegistrySheet({ isOpen, onClose, onSaved }: FeedingRegist
             <div className="flex flex-col items-center py-12">
               <TimerValue
                 value={`${String(Math.floor(durationSeconds / 3600)).padStart(2, "0")}:${String(Math.floor((durationSeconds % 3600) / 60)).padStart(2, "0")}:${String(durationSeconds % 60).padStart(2, "0")}`}
+                animated={!lowPerformanceMode}
                 className="font-display text-6xl text-text-primary mb-8 tracking-tight"
               />
               <button
@@ -205,7 +215,7 @@ export function FeedingRegistrySheet({ isOpen, onClose, onSaved }: FeedingRegist
         >
           <button
             onClick={handleSave}
-            disabled={isSaving || (durationSeconds === 0 && volumeMl === 0)}
+            disabled={isSaving || !canSave}
             className="w-full h-16 bg-primary hover:bg-primary/90 active:scale-[0.98] text-on-primary font-display font-semibold rounded-2xl flex items-center justify-center gap-3 transition-all duration-200 shadow-xl shadow-primary/10 disabled:opacity-50"
           >
             <Check className="w-6 h-6 strokeWidth={2.5}" />

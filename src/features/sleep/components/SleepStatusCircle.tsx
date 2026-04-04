@@ -1,10 +1,10 @@
 "use client";
 
 import { Moon } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
 import { useSleep } from "@/contexts/SleepContext";
 import { formatTime } from "@/lib/utils/format";
 import { useLowPerformanceMode } from "@/lib/hooks/useLowPerformanceMode";
+import { AnimatedTimeValue } from "@/components/ui";
 
 function formatElapsed(seconds: number): string {
   const h = Math.floor(seconds / 3600);
@@ -47,47 +47,6 @@ function getSleepPhrase(seconds: number, isNap: boolean): string {
   }
 
   return result;
-}
-
-function RollingDigit({ digit }: { digit: string }) {
-  return (
-    <span className="relative inline-flex h-[1em] items-center justify-center overflow-hidden align-middle leading-none">
-      <span className="invisible leading-none">{digit}</span>
-      <AnimatePresence initial={false}>
-        <motion.span
-          key={digit}
-          initial={{ y: "100%" }}
-          animate={{ y: "0%" }}
-          exit={{ y: "-100%" }}
-          transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
-          className="absolute inset-0 flex items-center justify-center leading-none"
-        >
-          {digit}
-        </motion.span>
-      </AnimatePresence>
-    </span>
-  );
-}
-
-function RollingTimer({ value }: { value: string }) {
-  const parts = value.split(":");
-
-  return (
-    <span className="inline-flex items-center align-middle leading-none">
-      {parts.map((part, partIndex) => (
-        <span key={partIndex} className="inline-flex items-center leading-none">
-          {part.split("").map((digit, digitIndex) => (
-            <RollingDigit key={digitIndex} digit={digit} />
-          ))}
-          {partIndex < parts.length - 1 && (
-            <span className="inline-flex h-[1em] items-center text-text-secondary leading-none">
-              :
-            </span>
-          )}
-        </span>
-      ))}
-    </span>
-  );
 }
 
 export function SleepStatusCircle() {
@@ -144,7 +103,10 @@ export function SleepStatusCircle() {
         </p>
 
         <div className="font-display text-[68px] leading-none text-text-primary mb-8 tracking-tighter font-light">
-          {lowPerformanceMode ? formatElapsed(elapsedSeconds) : <RollingTimer value={formatElapsed(elapsedSeconds)} />}
+          <AnimatedTimeValue
+            value={formatElapsed(elapsedSeconds)}
+            animated={!lowPerformanceMode}
+          />
         </div>
 
         <div className="flex items-center gap-2 bg-surface-container-low border border-outline-variant/20 px-4 py-2 rounded-full">

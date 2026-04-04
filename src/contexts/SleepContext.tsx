@@ -137,18 +137,21 @@ export function SleepProvider({ children }: SleepProviderProps) {
     }
   }, [startedAt, sleepType, isPaused]);
 
-  const tick = useCallback(() => {
-    if (startedAt) {
-      const elapsed = Math.floor(
-        (Date.now() - new Date(startedAt).getTime() - pausedDurationRef.current) / 1000
-      );
-      setElapsedSeconds(Math.max(0, elapsed));
+  const syncElapsedSeconds = useCallback(() => {
+    if (!startedAt || isPaused) {
+      return;
     }
-  }, [startedAt]);
+
+    const elapsed = Math.floor(
+      (Date.now() - new Date(startedAt).getTime() - pausedDurationRef.current) / 1000
+    );
+    setElapsedSeconds(Math.max(0, elapsed));
+  }, [startedAt, isPaused]);
 
   useEffect(() => {
     if (startedAt && !isPaused) {
-      intervalRef.current = setInterval(tick, 1000);
+      syncElapsedSeconds();
+      intervalRef.current = setInterval(syncElapsedSeconds, 1000);
     } else {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
@@ -161,18 +164,26 @@ export function SleepProvider({ children }: SleepProviderProps) {
         intervalRef.current = null;
       }
     };
-  }, [startedAt, isPaused, tick]);
+  }, [startedAt, isPaused, syncElapsedSeconds]);
 
   useEffect(() => {
-    if (!startedAt) {
-      const timer = setTimeout(() => setElapsedSeconds(0), 0);
-      return () => clearTimeout(timer);
-    }
-  }, [startedAt]);
+    const handleVisibilityChange = () => {
+      syncElapsedSeconds();
+    };
+
+    window.addEventListener("focus", syncElapsedSeconds);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener("focus", syncElapsedSeconds);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [syncElapsedSeconds]);
 
   const startSleep = useCallback((type: SleepType = "nap") => {
     setStartedAt(new Date().toISOString());
     setSleepType(type);
+    setElapsedSeconds(0);
     setIsPaused(false);
     pausedDurationRef.current = 0;
     pauseStartTimeRef.current = null;
@@ -180,9 +191,10 @@ export function SleepProvider({ children }: SleepProviderProps) {
 
   const pauseSleep = useCallback(() => {
     if (!startedAt || isPaused) return;
+    syncElapsedSeconds();
     pauseStartTimeRef.current = Date.now();
     setIsPaused(true);
-  }, [startedAt, isPaused]);
+  }, [startedAt, isPaused, syncElapsedSeconds]);
 
   const resumeSleep = useCallback(() => {
     if (!isPaused) return;

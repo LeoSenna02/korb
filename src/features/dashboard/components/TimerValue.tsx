@@ -1,16 +1,13 @@
 "use client";
 
+import { AnimatedTimeValue } from "@/components/ui";
+
 interface TimerValueProps {
   value: string;
   className?: string;
+  animated?: boolean;
 }
 
-export function TimerValue({ value, className = "" }: TimerValueProps) {
-  return (
-    <span
-      className={`inline-flex h-[1em] items-center justify-center align-middle leading-none tabular-nums ${className}`.trim()}
-    >
-      {value}
-    </span>
-  );
+export function TimerValue({ value, className = "", animated = false }: TimerValueProps) {
+  return <AnimatedTimeValue value={value} className={className} animated={animated} />;
 }

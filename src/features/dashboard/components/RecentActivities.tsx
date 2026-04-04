@@ -148,6 +148,14 @@ export function RecentActivities({ refreshKey }: RecentActivitiesProps) {
   const [activities, setActivities] = useState<DisplayActivity[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  const refreshRelativeTimes = useCallback(() => {
+    setActivities((prev) =>
+      prev.map((activity) =>
+        activity.rawDate ? { ...activity, timeAgo: timeAgo(activity.rawDate) } : activity
+      )
+    );
+  }, []);
+
   const loadActivities = useCallback(async () => {
     if (!baby) {
       setActivities([]);
@@ -176,14 +184,18 @@ export function RecentActivities({ refreshKey }: RecentActivitiesProps) {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setActivities((prev) =>
-        prev.map((a) =>
-          a.rawDate ? { ...a, timeAgo: timeAgo(a.rawDate) } : a
-        )
-      );
+      refreshRelativeTimes();
     }, 30_000);
-    return () => clearInterval(interval);
-  }, []);
+
+    window.addEventListener("focus", refreshRelativeTimes);
+    document.addEventListener("visibilitychange", refreshRelativeTimes);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("focus", refreshRelativeTimes);
+      document.removeEventListener("visibilitychange", refreshRelativeTimes);
+    };
+  }, [refreshRelativeTimes]);
 
   return (
     <section className="mb-8">
