@@ -3,6 +3,7 @@ import type {
   PediatricAppointment,
   PediatricAppointmentStatus,
 } from "../types";
+import { attendAppointmentSubmitSchema } from "@/features/consultas/validation";
 import type { VaccineRecord } from "@/features/vaccines/types";
 import { getLocalDateKey } from "@/lib/utils/format";
 import { getDB } from "../index";
@@ -79,19 +80,74 @@ export async function markAppointmentAsAttended(
     postVisitNotes?: string;
     followUpIntervalDays?: number;
     followUpInstructions?: string;
+    growthData?: {
+      weightKg?: number;
+      heightCm?: number;
+      cephalicCm?: number;
+      measuredAt: string;
+    };
     linkedGrowthId?: string;
     linkedVaccineIds?: string[];
   }
 ): Promise<PediatricAppointment> {
-  return updateAppointment(id, {
-    status: "attended" satisfies PediatricAppointmentStatus,
-    attendedAt: data.attendedAt ?? new Date().toISOString(),
+  const parsedData = attendAppointmentSubmitSchema.parse({
     postVisitNotes: data.postVisitNotes,
     followUpIntervalDays: data.followUpIntervalDays,
     followUpInstructions: data.followUpInstructions,
+    growthData: data.growthData,
     linkedGrowthId: data.linkedGrowthId,
     linkedVaccineIds: sanitizeLinkedVaccineIds(data.linkedVaccineIds),
   });
+  const db = await getDB();
+  const tx = db.transaction(["appointments", "growth"], "readwrite");
+  const appointmentsStore = tx.objectStore("appointments");
+  const growthStore = tx.objectStore("growth");
+  const existing = await appointmentsStore.get(id);
+
+  if (!existing) {
+    throw new Error("Appointment not found");
+  }
+
+  let nextLinkedGrowthId = parsedData.linkedGrowthId;
+
+  if (parsedData.growthData) {
+    const growthId = parsedData.linkedGrowthId ?? generateId();
+    const existingGrowth = parsedData.linkedGrowthId
+      ? await growthStore.get(parsedData.linkedGrowthId)
+      : undefined;
+
+    const growthRecord: GrowthRecord = existingGrowth
+      ? {
+          ...existingGrowth,
+          ...parsedData.growthData,
+        }
+      : {
+          id: growthId,
+          babyId: existing.babyId,
+          createdAt: new Date().toISOString(),
+          ...parsedData.growthData,
+        };
+
+    await growthStore.put(growthRecord);
+    nextLinkedGrowthId = growthRecord.id;
+  }
+
+  const updated: PediatricAppointment = {
+    ...existing,
+    status: "attended" satisfies PediatricAppointmentStatus,
+    attendedAt: data.attendedAt ?? existing.attendedAt ?? new Date().toISOString(),
+    postVisitNotes: parsedData.postVisitNotes,
+    followUpIntervalDays: parsedData.followUpIntervalDays,
+    followUpInstructions: parsedData.followUpInstructions,
+    linkedGrowthId: nextLinkedGrowthId,
+    linkedVaccineIds: parsedData.linkedVaccineIds,
+    updatedAt: new Date().toISOString(),
+  };
+
+  await appointmentsStore.put(updated);
+  await tx.done;
+
+  return updated;
 }
 
 export async function getAppointmentsByBabyId(

@@ -1,3 +1,5 @@
+import { BrandLogo } from "@/components/branding/BrandLogo";
+
 export function LoadingScreen() {
   return (
     <div className="fixed inset-0 bg-surface-dim flex items-center justify-center z-[9999]">
@@ -14,9 +16,12 @@ export function LoadingScreen() {
             className="absolute w-16 h-16 rounded-full bg-primary/15"
             style={{ animation: "breathe 3s ease-in-out infinite 0.3s" }}
           />
-          <span className="font-display text-2xl font-semibold tracking-tight text-text-primary relative z-10">
-            Korb
-          </span>
+          <BrandLogo
+            size={72}
+            showName={false}
+            priority
+            className="relative z-10"
+          />
         </div>
 
         <div className="flex items-center gap-1.5">

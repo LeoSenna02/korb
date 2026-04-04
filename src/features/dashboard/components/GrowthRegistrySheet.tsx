@@ -14,7 +14,9 @@ import {
   convertMeasuredAtToDateInputValue,
   formatWeightKgForInput,
   getTodayDateInputValue,
+  parseDecimalInput,
   parseWeightInputToKg,
+  sanitizeDecimalInput,
   sanitizeWeightInput,
 } from "@/features/dashboard/utils/growth";
 import type { GrowthRecordDisplay } from "@/features/growth/types";
@@ -106,9 +108,9 @@ export function GrowthRegistrySheet({
     if (!baby) return;
 
     const weightKg = weight ? parseWeightInputToKg(weight) : undefined;
-    const heightCm = height ? parseFloat(height) : undefined;
+    const heightCm = height ? parseDecimalInput(height) : undefined;
     const cephalicCm = cephalicPerimeter
-      ? parseFloat(cephalicPerimeter)
+      ? parseDecimalInput(cephalicPerimeter)
       : undefined;
 
     if (!weightKg && !heightCm && !cephalicCm) return;
@@ -199,11 +201,11 @@ export function GrowthRegistrySheet({
             <div className="flex-1 relative">
               <Input
                 label="ALTURA"
-                type="number"
-                step="0.1"
+                type="text"
+                inputMode="decimal"
                 placeholder="0.0"
                 value={height}
-                onChange={(e) => setHeight(e.target.value)}
+                onChange={(e) => setHeight(sanitizeDecimalInput(e.target.value))}
                 className="bg-surface-container-high border-none h-14"
               />
               <span className="absolute right-4 bottom-[14px] font-data text-xs text-text-secondary uppercase">cm</span>
@@ -213,11 +215,11 @@ export function GrowthRegistrySheet({
           <div className="relative">
             <Input
               label="PERÍMETRO CEFÁLICO"
-              type="number"
-              step="0.1"
+              type="text"
+              inputMode="decimal"
               placeholder="0.0"
               value={cephalicPerimeter}
-              onChange={(e) => setCephalicPerimeter(e.target.value)}
+              onChange={(e) => setCephalicPerimeter(sanitizeDecimalInput(e.target.value))}
               className="bg-surface-container-high border-none h-14"
             />
             <span className="absolute right-4 bottom-[14px] font-data text-xs text-text-secondary uppercase">cm</span>

@@ -1,18 +1,45 @@
 import type { GrowthRecord } from "../types";
+import { z } from "zod";
 import { getDB } from "../index";
 import { generateId } from "../utils";
+
+const growthRecordSchema = z
+  .object({
+    babyId: z.string().min(1),
+    weightKg: z.number().positive().max(30).optional(),
+    heightCm: z.number().positive().max(130).optional(),
+    cephalicCm: z.number().positive().max(80).optional(),
+    notes: z.string().trim().max(1000).optional(),
+    measuredAt: z.string().min(1),
+  })
+  .refine(
+    (values) =>
+      values.weightKg != null ||
+      values.heightCm != null ||
+      values.cephalicCm != null,
+    {
+      message: "At least one growth measurement is required",
+      path: ["weightKg"],
+    }
+  );
 
 export async function saveGrowth(
   data: Omit<GrowthRecord, "id" | "createdAt">
 ): Promise<GrowthRecord> {
   const db = await getDB();
+  const parsedData = growthRecordSchema.parse(data);
   const record: GrowthRecord = {
     id: generateId(),
-    ...data,
+    ...parsedData,
     createdAt: new Date().toISOString(),
   };
   await db.put("growth", record);
   return record;
+}
+
+export async function getGrowthById(id: string): Promise<GrowthRecord | null> {
+  const db = await getDB();
+  return (await db.get("growth", id)) ?? null;
 }
 
 export async function updateGrowth(
@@ -23,9 +50,14 @@ export async function updateGrowth(
   const existing = await db.get("growth", id);
   if (!existing) throw new Error("Growth record not found");
 
-  const updated: GrowthRecord = {
+  const parsedData = growthRecordSchema.parse({
     ...existing,
     ...data,
+  });
+
+  const updated: GrowthRecord = {
+    ...existing,
+    ...parsedData,
   };
 
   await db.put("growth", updated);

@@ -27,6 +27,10 @@ export interface AttendAppointmentFormValues {
   postVisitNotes: string;
   followUpIntervalDays: string;
   followUpInstructions: string;
+  measurementsEnabled: boolean;
+  weight: string;
+  height: string;
+  cephalicPerimeter: string;
   linkedGrowthId?: string;
   linkedVaccineIds: string[];
 }

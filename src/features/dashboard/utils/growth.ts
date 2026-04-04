@@ -61,7 +61,7 @@ export function convertMeasuredAtToDateInputValue(measuredAt: string) {
   return `${year}-${month}-${day}`;
 }
 
-export function sanitizeWeightInput(value: string) {
+export function sanitizeDecimalInput(value: string) {
   const cleaned = value.replace(/[^\d.,]/g, "");
   const separatorIndex = cleaned.search(/[.,]/);
 
@@ -73,6 +73,23 @@ export function sanitizeWeightInput(value: string) {
   const fractionalPart = cleaned.slice(separatorIndex + 1).replace(/[.,]/g, "");
 
   return `${integerPart}${fractionalPart}`;
+}
+
+export function parseDecimalInput(value: string) {
+  const sanitized = sanitizeDecimalInput(value.trim());
+
+  if (!sanitized) {
+    return undefined;
+  }
+
+  const normalized = sanitized.replace(",", ".");
+  const parsed = Number(normalized);
+
+  return Number.isFinite(parsed) ? parsed : undefined;
+}
+
+export function sanitizeWeightInput(value: string) {
+  return sanitizeDecimalInput(value);
 }
 
 export function parseWeightInputToKg(value: string) {

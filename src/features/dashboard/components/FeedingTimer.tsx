@@ -1,7 +1,7 @@
 "use client";
 
 import { Play, Pause, RotateCcw, ArrowLeftRight } from "lucide-react";
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { TimerValue } from "./TimerValue";
 import { useLowPerformanceMode } from "@/lib/hooks/useLowPerformanceMode";
 
@@ -19,12 +19,67 @@ interface FeedingTimerProps {
 
 type ActiveSide = "left" | "right";
 
+interface FeedingTimerState {
+  isActive: boolean;
+  activeSide: ActiveSide;
+  leftSeconds: number;
+  rightSeconds: number;
+  segmentStartedAt: string | null;
+}
+
 function formatTime(seconds: number): string {
   const h = Math.floor(seconds / 3600);
   const m = Math.floor((seconds % 3600) / 60);
   const s = seconds % 60;
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${pad(h)}:${pad(m)}:${pad(s)}`;
+}
+
+function consumeElapsedSeconds(segmentStartedAt: string, nowMs: number) {
+  const segmentStartedAtMs = new Date(segmentStartedAt).getTime();
+  const elapsedMs = Math.max(0, nowMs - segmentStartedAtMs);
+  const elapsedSeconds = Math.floor(elapsedMs / 1000);
+
+  if (elapsedSeconds === 0) {
+    return {
+      elapsedSeconds: 0,
+      nextSegmentStartedAt: segmentStartedAt,
+    };
+  }
+
+  return {
+    elapsedSeconds,
+    nextSegmentStartedAt: new Date(segmentStartedAtMs + elapsedSeconds * 1000).toISOString(),
+  };
+}
+
+function syncActiveSeconds(state: FeedingTimerState, nowMs = Date.now()): FeedingTimerState {
+  if (!state.isActive || !state.segmentStartedAt) {
+    return state;
+  }
+
+  const { elapsedSeconds, nextSegmentStartedAt } = consumeElapsedSeconds(
+    state.segmentStartedAt,
+    nowMs
+  );
+
+  if (elapsedSeconds === 0) {
+    return state;
+  }
+
+  if (state.activeSide === "left") {
+    return {
+      ...state,
+      leftSeconds: state.leftSeconds + elapsedSeconds,
+      segmentStartedAt: nextSegmentStartedAt,
+    };
+  }
+
+  return {
+    ...state,
+    rightSeconds: state.rightSeconds + elapsedSeconds,
+    segmentStartedAt: nextSegmentStartedAt,
+  };
 }
 
 function SingleTimer({ isActive, elapsedSeconds, onToggle, onReset }: {
@@ -202,32 +257,42 @@ export function FeedingTimer({
   initialLeftSeconds = 0,
   initialRightSeconds = 0,
 }: FeedingTimerProps) {
-  const [isActive, setIsActive] = useState(false);
-  const [activeSide, setActiveSide] = useState<ActiveSide>("left");
-  const [leftSeconds, setLeftSeconds] = useState(initialLeftSeconds);
-  const [rightSeconds, setRightSeconds] = useState(initialRightSeconds);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [timerState, setTimerState] = useState<FeedingTimerState>({
+    isActive: false,
+    activeSide: "left",
+    leftSeconds: initialLeftSeconds,
+    rightSeconds: initialRightSeconds,
+    segmentStartedAt: null,
+  });
+
+  const { isActive, activeSide, leftSeconds, rightSeconds } = timerState;
+
+  const syncNow = useCallback(() => {
+    setTimerState((currentState) => syncActiveSeconds(currentState));
+  }, []);
 
   useEffect(() => {
-    if (isActive) {
-      intervalRef.current = setInterval(() => {
-        if (activeSide === "left") {
-          setLeftSeconds((prev) => prev + 1);
-        } else {
-          setRightSeconds((prev) => prev + 1);
-        }
-      }, 1000);
-    } else if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
+    if (!isActive) {
+      return;
     }
 
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
+    const intervalId = setInterval(syncNow, 1000);
+    return () => clearInterval(intervalId);
+  }, [isActive, syncNow]);
+
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      syncNow();
     };
-  }, [isActive, activeSide]);
+
+    window.addEventListener("focus", syncNow);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener("focus", syncNow);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [syncNow]);
 
   useEffect(() => {
     const total = leftSeconds + rightSeconds;
@@ -243,30 +308,54 @@ export function FeedingTimer({
   }, [rightSeconds, onRightSecondsChange]);
 
   const toggleTimer = useCallback(() => {
-    setIsActive((prev) => {
-      const next = !prev;
-      if (next) {
-        onStart?.();
-      } else {
-        onPause?.();
+    const now = new Date().toISOString();
+
+    if (isActive) {
+      onPause?.();
+    } else {
+      onStart?.();
+    }
+
+    setTimerState((currentState) => {
+      if (currentState.isActive) {
+        const pausedState = syncActiveSeconds(currentState);
+        return {
+          ...pausedState,
+          isActive: false,
+          segmentStartedAt: null,
+        };
       }
-      return next;
+
+      return {
+        ...currentState,
+        isActive: true,
+        segmentStartedAt: now,
+      };
     });
-  }, [onStart, onPause]);
+  }, [isActive, onStart, onPause]);
 
   const switchSide = useCallback(() => {
-    if (activeSide === "left") {
-      setActiveSide("right");
-    } else {
-      setActiveSide("left");
-    }
-  }, [activeSide]);
+    const now = new Date().toISOString();
+
+    setTimerState((currentState) => {
+      const syncedState = syncActiveSeconds(currentState);
+
+      return {
+        ...syncedState,
+        activeSide: syncedState.activeSide === "left" ? "right" : "left",
+        segmentStartedAt: syncedState.isActive ? now : null,
+      };
+    });
+  }, []);
 
   const resetTimer = useCallback(() => {
-    setIsActive(false);
-    setLeftSeconds(0);
-    setRightSeconds(0);
-    setActiveSide("left");
+    setTimerState({
+      isActive: false,
+      activeSide: "left",
+      leftSeconds: 0,
+      rightSeconds: 0,
+      segmentStartedAt: null,
+    });
     onTimeChange?.(0);
     onLeftSecondsChange?.(0);
     onRightSecondsChange?.(0);

@@ -58,6 +58,10 @@ export function buildEmptyAttendFormValues(
         ? String(appointment.followUpIntervalDays)
         : "",
     followUpInstructions: appointment?.followUpInstructions ?? "",
+    measurementsEnabled: Boolean(appointment?.linkedGrowthId),
+    weight: "",
+    height: "",
+    cephalicPerimeter: "",
     linkedGrowthId: appointment?.linkedGrowthId,
     linkedVaccineIds: appointment?.linkedVaccineIds ?? [],
   };

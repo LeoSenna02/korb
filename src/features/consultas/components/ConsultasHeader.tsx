@@ -56,7 +56,7 @@ export function ConsultasHeader({
             <h1 className="font-display text-3xl font-semibold tracking-tight text-text-primary mt-2">
               Consultas
             </h1>
-            <p className="font-data text-sm text-text-secondary mt-2 max-w-[32rem]">
+            <p className="mt-2 max-w-[30rem] font-data text-[13px] leading-6 text-text-secondary sm:text-sm sm:leading-6">
               Organize retornos, registre observacoes antes e depois da visita e
               conecte vacinas e crescimento em um unico dossie.
             </p>
@@ -67,11 +67,11 @@ export function ConsultasHeader({
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-3">
-          <div className="rounded-2xl bg-surface-variant/15 p-4">
-            <div className="flex items-center gap-2 text-[#88AFC7] mb-2">
-              <CalendarHeart className="w-4 h-4" strokeWidth={2} />
-              <span className="font-data text-[10px] tracking-widest uppercase">
+        <div className="grid grid-cols-2 gap-3 min-[360px]:grid-cols-3">
+          <div className="min-w-0 rounded-2xl bg-surface-variant/15 p-3.5 min-[360px]:p-4">
+            <div className="mb-2 flex min-w-0 flex-col items-start gap-1 text-[#88AFC7]">
+              <CalendarHeart className="h-4 w-4 shrink-0" strokeWidth={2} />
+              <span className="max-w-full break-all font-data text-[8px] uppercase leading-3 tracking-[0.12em] min-[360px]:text-[9px]">
                 Proximas
               </span>
             </div>
@@ -80,10 +80,10 @@ export function ConsultasHeader({
             </span>
           </div>
 
-          <div className="rounded-2xl bg-surface-variant/15 p-4">
-            <div className="flex items-center gap-2 text-[#D2B59D] mb-2">
-              <Clock3 className="w-4 h-4" strokeWidth={2} />
-              <span className="font-data text-[10px] tracking-widest uppercase">
+          <div className="min-w-0 rounded-2xl bg-surface-variant/15 p-3.5 min-[360px]:p-4">
+            <div className="mb-2 flex min-w-0 flex-col items-start gap-1 text-[#D2B59D]">
+              <Clock3 className="h-4 w-4 shrink-0" strokeWidth={2} />
+              <span className="max-w-full break-all font-data text-[8px] uppercase leading-3 tracking-[0.12em] min-[360px]:text-[9px]">
                 Atrasadas
               </span>
             </div>
@@ -92,10 +92,10 @@ export function ConsultasHeader({
             </span>
           </div>
 
-          <div className="rounded-2xl bg-surface-variant/15 p-4">
-            <div className="flex items-center gap-2 text-[#8EAF96] mb-2">
-              <ShieldCheck className="w-4 h-4" strokeWidth={2} />
-              <span className="font-data text-[10px] tracking-widest uppercase">
+          <div className="min-w-0 rounded-2xl bg-surface-variant/15 p-3.5 min-[360px]:p-4">
+            <div className="mb-2 flex min-w-0 flex-col items-start gap-1 text-[#8EAF96]">
+              <ShieldCheck className="h-4 w-4 shrink-0" strokeWidth={2} />
+              <span className="max-w-full break-all font-data text-[8px] uppercase leading-3 tracking-[0.12em] min-[360px]:text-[9px]">
                 Atendidas
               </span>
             </div>

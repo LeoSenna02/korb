@@ -1,4 +1,4 @@
-const STATIC_CACHE = "korb-static-v1";
+const STATIC_CACHE = "korb-static-v2";
 const RUNTIME_CACHE = "korb-runtime-v1";
 const OFFLINE_URL = "/offline";
 
@@ -9,7 +9,7 @@ const APP_SHELL = [
   OFFLINE_URL,
   "/manifest.json",
   "/favicon.ico",
-  "/favicon.svg",
+  "/favicon.png",
   "/apple-touch-icon.png",
   "/icons/icon-192.png",
   "/icons/icon-512.png",
