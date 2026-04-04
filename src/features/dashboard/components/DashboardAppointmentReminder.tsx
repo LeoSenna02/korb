@@ -28,7 +28,7 @@ export function DashboardAppointmentReminder() {
         reminder={dashboardReminderCard}
         compact
         title="Consulta nas proximas 24h"
-        description="Abra a agenda pediatrica para revisar os detalhes e se preparar sem poluir a dashboard."
+        description="Revise a agenda pediatrica antes da visita."
         actionLabel="Abrir consultas"
         onAction={() => router.push("/dashboard/consultas")}
         onDismiss={dismissDashboardReminder}
