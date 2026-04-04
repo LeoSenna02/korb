@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Droplet, Baby, Ruler } from "lucide-react";
+import { Droplet, Baby, Ruler, Stethoscope } from "lucide-react";
 import Link from "next/link";
 import { useBaby } from "@/contexts/BabyContext";
 import { getRecentActivities } from "@/lib/db/repositories/activity";
@@ -11,7 +11,7 @@ import { timeAgo } from "@/lib/utils/format";
 
 interface DisplayActivity {
   id: string;
-  type: "fralda" | "mamada" | "crescimento";
+  type: "fralda" | "mamada" | "crescimento" | "consulta";
   title: string;
   details: string;
   timeAgo: string;
@@ -22,12 +22,14 @@ const iconsMap: Record<DisplayActivity["type"], React.ElementType> = {
   fralda: Droplet,
   mamada: Baby,
   crescimento: Ruler,
+  consulta: Stethoscope,
 };
 
 const iconColorMap: Record<DisplayActivity["type"], string> = {
   fralda: "text-[#D2B59D]",
   mamada: "text-[#8EAF96]",
   crescimento: "text-text-primary",
+  consulta: "text-[#88AFC7]",
 };
 
 function formatActivity(record: ActivityRecord): DisplayActivity {
@@ -79,6 +81,16 @@ function formatActivity(record: ActivityRecord): DisplayActivity {
         details: parts.join(" • "),
         timeAgo: timeAgo(record.measuredAt),
         rawDate: record.measuredAt,
+      };
+    }
+    case "appointment": {
+      return {
+        id: record.id,
+        type: "consulta",
+        title: "Consulta pediatrica",
+        details: record.doctorName,
+        timeAgo: timeAgo(record.attendedAt ?? record.scheduledAt),
+        rawDate: record.attendedAt ?? record.scheduledAt,
       };
     }
     default: {

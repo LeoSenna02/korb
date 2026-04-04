@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, History, BarChart2, User } from "lucide-react";
+import { Home, History, BarChart2, User, Stethoscope } from "lucide-react";
 import { useModal } from "@/contexts/ModalContext";
 
 export function BottomNav() {
@@ -15,6 +15,7 @@ export function BottomNav() {
 
   const navItems = [
     { name: "Início", path: "/dashboard", icon: Home },
+    { name: "Consultas", path: "/dashboard/consultas", icon: Stethoscope },
     { name: "Histórico", path: "/dashboard/history", icon: History },
     { name: "Relatórios", path: "/dashboard/reports", icon: BarChart2 },
     { name: "Perfil", path: "/dashboard/profile", icon: User },

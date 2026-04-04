@@ -1,4 +1,9 @@
-export type ActivityType = "mamada" | "fralda" | "sono" | "crescimento";
+export type ActivityType =
+  | "mamada"
+  | "fralda"
+  | "sono"
+  | "crescimento"
+  | "consulta";
 
 export interface HistoryActivity {
   id: string;
@@ -20,7 +25,13 @@ export interface HistoryGroup {
   activities: HistoryActivity[];
 }
 
-export type HistoryFilter = "tudo" | "mamada" | "fralda" | "sono" | "crescimento";
+export type HistoryFilter =
+  | "tudo"
+  | "mamada"
+  | "fralda"
+  | "sono"
+  | "crescimento"
+  | "consulta";
 
 export interface WeeklyStat {
   id: string;

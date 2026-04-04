@@ -6,26 +6,43 @@ export interface RecordCounts {
   totalDiapers: number;
   totalGrowth: number;
   totalVaccines: number;
+  totalAppointments: number;
 }
 
 export async function getRecordCounts(babyId: string): Promise<RecordCounts> {
   const db = await getDB();
 
-  const [txFeed, txSleep, txDiaper, txGrowth, txVaccine] = [
+  const [txFeed, txSleep, txDiaper, txGrowth, txVaccine, txAppointment] = [
     db.transaction("feedings"),
     db.transaction("sleeps"),
     db.transaction("diapers"),
     db.transaction("growth"),
     db.transaction("vaccines"),
+    db.transaction("appointments"),
   ];
 
-  const [totalFeedings, totalSleeps, totalDiapers, totalGrowth, totalVaccines] = await Promise.all([
+  const [
+    totalFeedings,
+    totalSleeps,
+    totalDiapers,
+    totalGrowth,
+    totalVaccines,
+    totalAppointments,
+  ] = await Promise.all([
     txFeed.store.index("byBabyId").count(babyId),
     txSleep.store.index("byBabyId").count(babyId),
     txDiaper.store.index("byBabyId").count(babyId),
     txGrowth.store.index("byBabyId").count(babyId),
     txVaccine.store.index("byBabyId").count(babyId),
+    txAppointment.store.index("byBabyId").count(babyId),
   ]);
 
-  return { totalFeedings, totalSleeps, totalDiapers, totalGrowth, totalVaccines };
+  return {
+    totalFeedings,
+    totalSleeps,
+    totalDiapers,
+    totalGrowth,
+    totalVaccines,
+    totalAppointments,
+  };
 }

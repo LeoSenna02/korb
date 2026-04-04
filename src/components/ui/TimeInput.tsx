@@ -7,6 +7,8 @@ interface TimeInputProps {
   name?: string;
   error?: string;
   required?: boolean;
+  initialValue?: string;
+  onChange?: (time: string) => void;
 }
 
 const HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0"));
@@ -15,12 +17,39 @@ const MINUTES = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, "0"))
 const ITEM_HEIGHT = 48;
 
 export const TimeInput = forwardRef<HTMLDivElement, TimeInputProps>(
-  ({ label, name, error, required }, ref) => {
+  ({ label, name, error, required, initialValue, onChange }, ref) => {
     const today = new Date();
-    const [hour, setHour] = useState(String(today.getHours()).padStart(2, "0"));
-    const [minute, setMinute] = useState(String(today.getMinutes()).padStart(2, "0"));
+
+    function parseInitial(value?: string) {
+      if (!value) {
+        return {
+          hour: String(today.getHours()).padStart(2, "0"),
+          minute: String(today.getMinutes()).padStart(2, "0"),
+        };
+      }
+
+      const match = value.match(/^(\d{2}):(\d{2})$/);
+      if (!match) {
+        return {
+          hour: String(today.getHours()).padStart(2, "0"),
+          minute: String(today.getMinutes()).padStart(2, "0"),
+        };
+      }
+
+      return {
+        hour: match[1],
+        minute: match[2],
+      };
+    }
+
+    const [hour, setHour] = useState(() => parseInitial(initialValue).hour);
+    const [minute, setMinute] = useState(() => parseInitial(initialValue).minute);
 
     const formattedTime = `${hour}:${minute}`;
+
+    useEffect(() => {
+      onChange?.(formattedTime);
+    }, [formattedTime, onChange]);
 
     return (
       <div 
@@ -85,7 +114,7 @@ function ScrollWheel({ options, value, onChange, widthClass }: { options: string
     if (idx !== -1 && containerRef.current) {
       containerRef.current.scrollTop = idx * ITEM_HEIGHT;
     }
-  }, []);
+  }, [options, value]);
 
   useEffect(() => {
     const el = containerRef.current;

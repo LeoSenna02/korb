@@ -26,6 +26,15 @@ export {
   getVaccinesByBabyId,
   deleteVaccine,
 } from "./vaccine";
+export {
+  saveAppointment,
+  updateAppointment,
+  deleteAppointment,
+  markAppointmentAsAttended,
+  getAppointmentsByBabyId,
+  getRecentAttendedAppointments,
+  getAppointmentLinkSuggestions,
+} from "./appointment";
 export { getRecentActivities } from "./activity";
 export { getReportFeedings, getReportSleeps, getReportDiapers, getReportGrowth } from "./reports";
 export {

@@ -16,6 +16,7 @@
 
   /* ─── Cores Primárias (Sage Green) ─── */
   --primary: #7B9E87;
+  --primary-light: #8EAF96;  /* Variante clara — hover states e acentos */
   --primary-container: #7B9E87;
   --on-primary: #0A1A0D;
   --on-primary-container: #E8F0EA;

@@ -97,6 +97,25 @@ const vaccineRecordSchema = z.object({
   updatedAt: z.string().min(1),
 });
 
+const appointmentRecordSchema = z.object({
+  id: z.string().min(1),
+  babyId: z.string().min(1),
+  doctorName: z.string().min(1),
+  location: z.string().min(1),
+  reason: z.string().min(1),
+  scheduledAt: z.string().min(1),
+  status: z.enum(["scheduled", "attended"]),
+  preVisitNotes: z.string().optional(),
+  postVisitNotes: z.string().optional(),
+  followUpIntervalDays: z.number().int().positive().optional(),
+  followUpInstructions: z.string().optional(),
+  linkedGrowthId: z.string().optional(),
+  linkedVaccineIds: z.array(z.string()).default([]),
+  attendedAt: z.string().optional(),
+  createdAt: z.string().min(1),
+  updatedAt: z.string().min(1),
+});
+
 export const appSettingsSchema = z.object({
   notificationsEnabled: z.boolean(),
   soundEnabled: z.boolean(),
@@ -117,6 +136,7 @@ export const babyBackupPayloadSchema = z.object({
     growth: z.array(growthRecordSchema),
     milestones: z.array(milestoneRecordSchema),
     vaccines: z.array(vaccineRecordSchema).default([]),
+    appointments: z.array(appointmentRecordSchema).default([]),
   }),
   settings: appSettingsSchema,
 });

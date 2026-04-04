@@ -58,6 +58,51 @@ export function formatTime(isoString: string): string {
   });
 }
 
+export function getLocalDateKey(dateStr: string): string {
+  const isDateOnly = /^\d{4}-\d{2}-\d{2}$/.test(dateStr);
+  const date = isDateOnly ? parseDateLocal(dateStr) : new Date(dateStr);
+
+  if (!Number.isFinite(date.getTime())) {
+    return "";
+  }
+
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
+
+export function combineDateAndTimeToIso(date: string, time: string): string {
+  const [year, month, day] = date.split("-").map(Number);
+  const [hours, minutes] = time.split(":").map(Number);
+
+  if (
+    !Number.isFinite(year) ||
+    !Number.isFinite(month) ||
+    !Number.isFinite(day) ||
+    !Number.isFinite(hours) ||
+    !Number.isFinite(minutes)
+  ) {
+    return new Date().toISOString();
+  }
+
+  return new Date(year, month - 1, day, hours, minutes, 0, 0).toISOString();
+}
+
+export function getLocalTimeValue(isoString: string): string {
+  const date = new Date(isoString);
+
+  if (!Number.isFinite(date.getTime())) {
+    return "00:00";
+  }
+
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+
+  return `${hours}:${minutes}`;
+}
+
 export function formatMonthShort(isoString: string): string {
   const isDateOnly = /^\d{4}-\d{2}-\d{2}$/.test(isoString);
   const date = isDateOnly ? parseDateLocal(isoString) : new Date(isoString);

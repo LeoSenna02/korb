@@ -1,7 +1,7 @@
 import { openDB, type IDBPDatabase } from "idb";
 
 const DB_NAME = "korb-db";
-const DB_VERSION = 6;
+const DB_VERSION = 7;
 
 let dbPromise: Promise<IDBPDatabase> | null = null;
 
@@ -88,6 +88,15 @@ export function getDB(): Promise<IDBPDatabase> {
           if (!s.indexNames.contains("byBabyIdAndCreated")) s.createIndex("byBabyIdAndCreated", ["babyId", "createdAt"]);
           if (!s.indexNames.contains("byBabyIdAndScheduledMonth")) s.createIndex("byBabyIdAndScheduledMonth", ["babyId", "scheduledMonth"]);
           if (!s.indexNames.contains("byBabyIdAndAppliedDate")) s.createIndex("byBabyIdAndAppliedDate", ["babyId", "appliedDate"]);
+        }
+
+        if (!db.objectStoreNames.contains("appointments")) {
+          const s = db.createObjectStore("appointments", { keyPath: "id" });
+          s.createIndex("byBabyId", "babyId");
+          s.createIndex("byStatus", "status");
+          s.createIndex("byScheduledAt", "scheduledAt");
+          s.createIndex("byBabyIdAndScheduledAt", ["babyId", "scheduledAt"]);
+          s.createIndex("byBabyIdAndStatus", ["babyId", "status"]);
         }
       },
     });

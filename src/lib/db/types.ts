@@ -67,8 +67,30 @@ export interface SleepRecord {
   createdAt: string;
 }
 
+export type PediatricAppointmentStatus = "scheduled" | "attended";
+
+export interface PediatricAppointment {
+  id: string;
+  babyId: string;
+  doctorName: string;
+  location: string;
+  reason: string;
+  scheduledAt: string;
+  status: PediatricAppointmentStatus;
+  preVisitNotes?: string;
+  postVisitNotes?: string;
+  followUpIntervalDays?: number;
+  followUpInstructions?: string;
+  linkedGrowthId?: string;
+  linkedVaccineIds: string[];
+  attendedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export type ActivityRecord =
   | (FeedingRecord & { activityType: "feeding" })
   | (DiaperRecord & { activityType: "diaper" })
   | (GrowthRecord & { activityType: "growth" })
-  | (SleepRecord & { activityType: "sleep" });
+  | (SleepRecord & { activityType: "sleep" })
+  | (PediatricAppointment & { activityType: "appointment" });

@@ -3,8 +3,10 @@ import type {
   DiaperRecord,
   SleepRecord,
   GrowthRecord,
+  PediatricAppointment,
 } from "../types";
 import type { HistoryActivity, WeeklyStat } from "@/features/history/types";
+import { getAppointmentsByBabyId } from "./appointment";
 import { getFeedingsByBabyId } from "./feeding";
 import { getDiapersByBabyId } from "./diaper";
 import { getSleepsByBabyId } from "./sleep";
@@ -102,14 +104,27 @@ function formatGrowthActivity(r: GrowthRecord): HistoryActivity {
   };
 }
 
+function formatAppointmentActivity(r: PediatricAppointment): HistoryActivity {
+  return {
+    id: r.id,
+    type: "consulta",
+    title: "Consulta pediatrica",
+    details: `${r.doctorName} â€” ${r.location}`,
+    date: formatDate(r.attendedAt ?? r.scheduledAt),
+    time: formatTime(r.attendedAt ?? r.scheduledAt),
+    sortKey: r.attendedAt ?? r.scheduledAt,
+  };
+}
+
 export async function getAllActivitiesForHistory(
   babyId: string
 ): Promise<HistoryActivity[]> {
-  const [feedings, diapers, sleeps, growth] = await Promise.all([
+  const [feedings, diapers, sleeps, growth, appointments] = await Promise.all([
     getFeedingsByBabyId(babyId),
     getDiapersByBabyId(babyId),
     getSleepsByBabyId(babyId),
     getGrowthByBabyId(babyId),
+    getAppointmentsByBabyId(babyId),
   ]);
 
   const activities: HistoryActivity[] = [
@@ -117,6 +132,9 @@ export async function getAllActivitiesForHistory(
     ...diapers.map(formatDiaperActivity),
     ...sleeps.map(formatSleepActivity),
     ...growth.map(formatGrowthActivity),
+    ...appointments
+      .filter((appointment) => appointment.status === "attended")
+      .map(formatAppointmentActivity),
   ];
 
   activities.sort((a, b) => b.sortKey.localeCompare(a.sortKey));

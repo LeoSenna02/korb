@@ -48,6 +48,7 @@ export function useProfileData(): UseProfileDataReturn {
     totalDiapers: 0,
     totalGrowth: 0,
     totalVaccines: 0,
+    totalAppointments: 0,
   });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -65,6 +66,7 @@ export function useProfileData(): UseProfileDataReturn {
         totalDiapers: 0,
         totalGrowth: 0,
         totalVaccines: 0,
+        totalAppointments: 0,
       });
       setIsLoading(false);
       return;

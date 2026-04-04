@@ -110,6 +110,8 @@ Neste sistema, a profundidade é sentida, não vista.
 
 - **Primary:** Fundo `primary_container` (#7B9E87), texto `on_primary_container`. Sem sombras internas. Raio de 12px.
 
+- **Primary Light:** Fundo `primary-light` (#8EAF96), para hover states e acentos. Texto `on_primary` (#0A1A0D).
+
 - **Secondary:** Fundo `secondary_container` (#584325), texto `on_secondary_container`. Para ações de apoio.
 
 - **Floating Timer:** Um elemento de vidro (Glassmorphism) com bordas arredondadas de 999px, flutuando na base da tela.
