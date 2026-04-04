@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useState } from "react";
+import { motion } from "framer-motion";
 import { ChevronRight } from "lucide-react";
-import { useModal } from "@/contexts/ModalContext";
+import { Sheet } from "@/components/ui/Sheet";
 import { useAppSettings } from "../hooks/useAppSettings";
-import type { AppSettings, Language, WeightUnit, VolumeUnit } from "../types";
+import type { Language, WeightUnit, VolumeUnit } from "../types";
 
 const container = {
   hidden: { opacity: 0 },
@@ -85,15 +85,6 @@ interface CustomSelectorProps {
 
 function CustomSelector({ label, value, options, onChange }: CustomSelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const { openModal } = useModal();
-
-  useEffect(() => {
-    if (isOpen) {
-      const close = openModal();
-      return close;
-    }
-  }, [isOpen, openModal]);
-
   const selectedOption = options.find((opt) => opt.value === value);
 
   return (
@@ -125,89 +116,66 @@ function CustomSelector({ label, value, options, onChange }: CustomSelectorProps
         </div>
       </button>
 
-      {isOpen && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          onClick={() => setIsOpen(false)}
-          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm"
-        />
-      )}
-
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ y: "100%" }}
-            animate={{ y: 0 }}
-            exit={{ y: "100%" }}
-            transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="fixed bottom-0 left-0 right-0 z-50 bg-surface-container-highest rounded-t-3xl px-4 pb-8 pt-4"
-            style={{ borderRadius: "24px 24px 0 0" }}
-          >
-            <div className="w-10 h-1 bg-surface-variant rounded-full mx-auto mb-4" />
-
-            <h4 className="font-display text-base font-medium text-text-primary text-center mb-4">
-              {label}
-            </h4>
-
-            <div className="flex flex-col gap-2">
-              {options.map((option) => (
-                <button
-                  key={option.value}
-                  onClick={() => {
-                    onChange(option.value);
-                    setIsOpen(false);
-                  }}
-                  className={`
-                    w-full flex items-center justify-between p-4 rounded-2xl transition-all duration-200
-                    ${
-                      value === option.value
-                        ? "bg-primary/15 border border-primary/30"
-                        : "bg-surface-container-low border border-transparent hover:border-surface-variant/40"
-                    }
-                  `}
-                >
-                  <div className="flex flex-col items-start">
-                    <span className="font-display text-sm font-medium text-text-primary">
-                      {option.label}
-                    </span>
-                    {option.description && (
-                      <span className="font-data text-[10px] text-text-disabled mt-0.5">
-                        {option.description}
-                      </span>
-                    )}
-                  </div>
-                  {value === option.value && (
-                    <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center">
-                      <svg
-                        viewBox="0 0 16 16"
-                        fill="none"
-                        className="w-3 h-3 text-on-primary"
-                      >
-                        <path
-                          d="M3 8l4 4 6-6"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
-                    </div>
-                  )}
-                </button>
-              ))}
-            </div>
-
+      <Sheet
+        isOpen={isOpen}
+        onClose={() => setIsOpen(false)}
+        title={label}
+      >
+        <div className="flex flex-col gap-2">
+          {options.map((option) => (
             <button
-              onClick={() => setIsOpen(false)}
-              className="w-full mt-4 py-3 text-center font-display text-sm text-text-secondary hover:text-text-primary transition-colors"
+              key={option.value}
+              onClick={() => {
+                onChange(option.value);
+                setIsOpen(false);
+              }}
+              className={`
+                w-full flex items-center justify-between p-4 rounded-2xl transition-all duration-200
+                ${
+                  value === option.value
+                    ? "bg-primary/15 border border-primary/30"
+                    : "bg-surface-container-low border border-transparent hover:border-surface-variant/40"
+                }
+              `}
             >
-              Cancelar
+              <div className="flex flex-col items-start">
+                <span className="font-display text-sm font-medium text-text-primary">
+                  {option.label}
+                </span>
+                {option.description && (
+                  <span className="font-data text-[10px] text-text-disabled mt-0.5">
+                    {option.description}
+                  </span>
+                )}
+              </div>
+              {value === option.value && (
+                <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center">
+                  <svg
+                    viewBox="0 0 16 16"
+                    fill="none"
+                    className="w-3 h-3 text-on-primary"
+                  >
+                    <path
+                      d="M3 8l4 4 6-6"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </div>
+              )}
             </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          ))}
+        </div>
+
+        <button
+          onClick={() => setIsOpen(false)}
+          className="w-full mt-4 py-3 text-center font-display text-sm text-text-secondary hover:text-text-primary transition-colors"
+        >
+          Cancelar
+        </button>
+      </Sheet>
     </>
   );
 }
@@ -249,8 +217,8 @@ export function AppSettingsSection() {
           <Toggle
             checked={settings.notificationsEnabled}
             onChange={(v) => updateSetting("notificationsEnabled", v)}
-            label="Notificacoes"
-            description="Alertas para mamadas, sono e trocas"
+            label="Lembretes no app"
+            description="Avisos visuais para consultas e outros eventos quando voce abrir o app"
           />
         </motion.div>
         <div className="mx-4 border-t border-surface-variant/10" />

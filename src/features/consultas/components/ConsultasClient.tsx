@@ -10,15 +10,18 @@ import {
   saveAppointment,
 } from "@/lib/db/repositories/appointment";
 import { formatDate } from "@/lib/utils/format";
+import { useAppSettings } from "@/features/profile/hooks/useAppSettings";
 import type {
   AppointmentListItem,
   FollowUpDraft,
   PediatricAppointment,
 } from "../types";
 import { useAppointments } from "../hooks/useAppointments";
+import { useAppointmentReminders } from "../hooks/useAppointmentReminders";
 import { AppointmentEmptyState } from "./AppointmentEmptyState";
 import { AppointmentList } from "./AppointmentList";
 import { AppointmentSheet } from "./AppointmentSheet";
+import { AppointmentReminderBanner } from "./AppointmentReminderBanner";
 import {
   AttendAppointmentSheet,
   type AttendAppointmentSaveResult,
@@ -29,7 +32,9 @@ export function ConsultasClient() {
   const router = useRouter();
   const { isAuthenticated, isHydrated: authHydrated } = useAuth();
   const { baby, isHydrated: babyHydrated } = useBaby();
+  const { settings, isHydrated: settingsHydrated } = useAppSettings();
   const {
+    appointments,
     upcomingAppointments,
     overdueAppointments,
     attendedAppointments,
@@ -45,6 +50,11 @@ export function ConsultasClient() {
   const [pendingFollowUp, setPendingFollowUp] = useState<FollowUpDraft | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isCreatingFollowUp, setIsCreatingFollowUp] = useState(false);
+  const { consultasReminderState } = useAppointmentReminders({
+    appointments,
+    babyId: baby?.id,
+    enabled: settings.notificationsEnabled,
+  });
 
   useEffect(() => {
     if (authHydrated && !isAuthenticated) {
@@ -57,7 +67,7 @@ export function ConsultasClient() {
     }
   }, [authHydrated, babyHydrated, isAuthenticated, baby, router]);
 
-  const dataReady = authHydrated && babyHydrated;
+  const dataReady = authHydrated && babyHydrated && settingsHydrated;
 
   const allAppointmentsCount = useMemo(
     () =>
@@ -146,10 +156,51 @@ export function ConsultasClient() {
     return null;
   }
 
+  const primaryReminder = consultasReminderState.primaryReminder;
+  const secondaryReminder = consultasReminderState.secondaryReminder;
+
   return (
     <>
       <main className="px-6 pt-4 pb-32 space-y-8">
         <ConsultasHeader {...summary} onCreate={handleCreateOpen} />
+
+        {primaryReminder ? (
+          <div className="space-y-3">
+            <AppointmentReminderBanner
+              reminder={primaryReminder}
+              title={
+                primaryReminder.kind === "overdue"
+                  ? "Consulta atrasada"
+                  : "Consulta se aproximando"
+              }
+              description={
+                primaryReminder.kind === "overdue"
+                  ? "Essa consulta ainda nao foi concluida. Atualize o registro ou marque como atendida."
+                  : "Sua proxima consulta esta dentro da janela de 24 horas."
+              }
+              actionLabel={
+                primaryReminder.kind === "overdue"
+                  ? "Marcar como atendida"
+                  : "Editar consulta"
+              }
+              onAction={() =>
+                primaryReminder.kind === "overdue"
+                  ? handleAttend(primaryReminder.appointment)
+                  : handleEdit(primaryReminder.appointment)
+              }
+            />
+
+            {secondaryReminder ? (
+              <AppointmentReminderBanner
+                reminder={secondaryReminder}
+                title="Proxima consulta"
+                description="Mesmo com atraso pendente, sua proxima visita continua destacada aqui."
+                actionLabel="Editar consulta"
+                onAction={() => handleEdit(secondaryReminder.appointment)}
+              />
+            ) : null}
+          </div>
+        ) : null}
 
         {allAppointmentsCount === 0 ? (
           <AppointmentEmptyState onCreate={handleCreateOpen} />

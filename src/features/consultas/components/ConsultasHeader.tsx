@@ -67,7 +67,7 @@ export function ConsultasHeader({
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 min-[360px]:grid-cols-3">
+        <div className="grid grid-cols-2 gap-3">
           <div className="min-w-0 rounded-2xl bg-surface-variant/15 p-3.5 min-[360px]:p-4">
             <div className="mb-2 flex min-w-0 flex-col items-start gap-1 text-[#88AFC7]">
               <CalendarHeart className="h-4 w-4 shrink-0" strokeWidth={2} />
@@ -92,7 +92,7 @@ export function ConsultasHeader({
             </span>
           </div>
 
-          <div className="min-w-0 rounded-2xl bg-surface-variant/15 p-3.5 min-[360px]:p-4">
+          <div className="col-span-2 min-w-0 rounded-2xl bg-surface-variant/15 p-3.5 min-[360px]:p-4">
             <div className="mb-2 flex min-w-0 flex-col items-start gap-1 text-[#8EAF96]">
               <ShieldCheck className="h-4 w-4 shrink-0" strokeWidth={2} />
               <span className="max-w-full break-all font-data text-[8px] uppercase leading-3 tracking-[0.12em] min-[360px]:text-[9px]">

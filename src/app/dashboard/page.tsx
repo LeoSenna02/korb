@@ -3,6 +3,7 @@
 import { useState, useCallback } from "react";
 import { DashboardHeader } from "@/features/dashboard/components/DashboardHeader";
 import { BabyHeroWidget } from "@/features/dashboard/components/BabyHeroWidget";
+import { DashboardAppointmentReminder } from "@/features/dashboard/components/DashboardAppointmentReminder";
 import { QuickActionsGrid } from "@/features/dashboard/components/QuickActionsGrid";
 import { RecentActivities } from "@/features/dashboard/components/RecentActivities";
 import { useAuth } from "@/lib/auth/hooks";
@@ -27,6 +28,7 @@ export default function DashboardPage() {
 
       <main className="px-6 pb-32">
         <BabyHeroWidget babyName={baby?.name ?? ""} />
+        <DashboardAppointmentReminder />
         <QuickActionsGrid onSaved={handleActivitySaved} />
         <RecentActivities refreshKey={refreshKey} />
       </main>

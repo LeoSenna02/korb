@@ -73,7 +73,7 @@ export function ConfirmModal({
               exit={{ opacity: 0, scale: 0.92, y: 8 }}
               transition={{ type: "spring", damping: 28, stiffness: 260 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-surface-container-highest rounded-3xl w-full max-w-sm overflow-hidden pointer-events-auto shadow-2xl"
+              className="bg-surface-container-low rounded-3xl w-full max-w-sm overflow-hidden pointer-events-auto shadow-2xl"
               role="dialog"
               aria-modal="true"
               aria-labelledby="confirm-modal-title"
@@ -81,23 +81,19 @@ export function ConfirmModal({
             >
               <div className="px-6 pt-8 pb-6 text-center">
                 <div
-                  className="w-12 h-12 rounded-full mx-auto mb-5 flex items-center justify-center"
-                  style={{
-                    backgroundColor:
-                      variant === "danger"
-                        ? "rgba(205, 130, 130, 0.15)"
-                        : "rgba(123, 158, 135, 0.15)",
-                  }}
+                  className={`w-12 h-12 rounded-full mx-auto mb-5 flex items-center justify-center ${
+                    variant === "danger"
+                      ? "bg-tertiary-container/15"
+                      : "bg-primary-container/15"
+                  }`}
                 >
                   <AlertTriangle
-                    className="w-5 h-5"
+                    className={`w-5 h-5 ${
+                      variant === "danger"
+                        ? "text-tertiary"
+                        : "text-primary"
+                    }`}
                     strokeWidth={1.5}
-                    style={{
-                      color:
-                        variant === "danger"
-                          ? "var(--tertiary-container)"
-                          : "var(--primary-container)",
-                    }}
                   />
                 </div>
 
@@ -118,15 +114,10 @@ export function ConfirmModal({
 
               <div className="px-6 pb-6 flex flex-col gap-2">
                 <Button
-                  variant={variant === "danger" ? "secondary" : "primary"}
+                  variant={variant === "danger" ? "tertiary" : "primary"}
                   size="md"
                   onClick={onConfirm}
                   disabled={isLoading}
-                  className={
-                    variant === "danger"
-                      ? "!bg-[#CD8282]/20 !text-[#CD8282] hover:!bg-[#CD8282]/30"
-                      : ""
-                  }
                 >
                   {isLoading ? (
                     <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />

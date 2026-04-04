@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useBaby } from "@/contexts/BabyContext";
 import { getAppointmentsByBabyId } from "@/lib/db/repositories/appointment";
+import type { PediatricAppointment } from "@/lib/db/types";
 import type { AppointmentListItem, AppointmentSummary } from "../types";
 import { withDisplayStatus } from "../utils";
 
@@ -18,9 +19,10 @@ interface UseAppointmentsReturn {
 
 export function useAppointments(): UseAppointmentsReturn {
   const { baby } = useBaby();
-  const [appointments, setAppointments] = useState<AppointmentListItem[]>([]);
+  const [storedAppointments, setStoredAppointments] = useState<PediatricAppointment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [now, setNow] = useState(() => new Date());
 
   const refresh = useCallback(() => {
     setRefreshKey((prev) => prev + 1);
@@ -28,7 +30,7 @@ export function useAppointments(): UseAppointmentsReturn {
 
   useEffect(() => {
     if (!baby) {
-      setAppointments([]);
+      setStoredAppointments([]);
       setIsLoading(false);
       return;
     }
@@ -43,13 +45,13 @@ export function useAppointments(): UseAppointmentsReturn {
         const result = await getAppointmentsByBabyId(babyId);
 
         if (!cancelled) {
-          const now = new Date();
-          setAppointments(result.map((appointment) => withDisplayStatus(appointment, now)));
+          setStoredAppointments(result);
+          setNow(new Date());
         }
       } catch (error) {
         console.error("[useAppointments] Failed to load:", error);
         if (!cancelled) {
-          setAppointments([]);
+          setStoredAppointments([]);
         }
       } finally {
         if (!cancelled) {
@@ -64,6 +66,27 @@ export function useAppointments(): UseAppointmentsReturn {
       cancelled = true;
     };
   }, [baby, refreshKey]);
+
+  useEffect(() => {
+    const syncNow = () => {
+      setNow(new Date());
+    };
+
+    const intervalId = setInterval(syncNow, 60_000);
+    window.addEventListener("focus", syncNow);
+    document.addEventListener("visibilitychange", syncNow);
+
+    return () => {
+      clearInterval(intervalId);
+      window.removeEventListener("focus", syncNow);
+      document.removeEventListener("visibilitychange", syncNow);
+    };
+  }, []);
+
+  const appointments = useMemo(
+    () => storedAppointments.map((appointment) => withDisplayStatus(appointment, now)),
+    [storedAppointments, now]
+  );
 
   const upcomingAppointments = useMemo(
     () =>

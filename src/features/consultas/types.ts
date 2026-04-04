@@ -14,6 +14,8 @@ export type PediatricAppointmentDisplayStatus =
   | "overdue"
   | "attended";
 
+export type AppointmentReminderKind = "upcoming" | "overdue";
+
 export interface AppointmentFormValues {
   doctorName: string;
   location: string;
@@ -44,6 +46,27 @@ export interface AppointmentSummary {
   upcomingAppointments: number;
   overdueAppointments: number;
   attendedAppointments: number;
+}
+
+export interface AppointmentReminderCardState {
+  appointment: AppointmentListItem;
+  kind: AppointmentReminderKind;
+  isDismissed: boolean;
+  visible: boolean;
+  timeUntilLabel: string;
+}
+
+export interface DismissedAppointmentReminder {
+  key: string;
+  appointmentId: string;
+  scheduledAt: string;
+  status: PediatricAppointmentDisplayStatus;
+  dismissedAt: string;
+}
+
+export interface ConsultasReminderState {
+  primaryReminder: AppointmentReminderCardState | null;
+  secondaryReminder: AppointmentReminderCardState | null;
 }
 
 export interface AppointmentLinkSuggestions {

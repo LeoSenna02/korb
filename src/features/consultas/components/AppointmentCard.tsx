@@ -145,35 +145,33 @@ export function AppointmentCard({
         )}
       </div>
 
-      <div className="mt-5 space-y-2.5">
+      <div className="mt-5 grid grid-cols-2 gap-2.5">
         <button
           type="button"
           onClick={() => onAttend(appointment)}
-          className="w-full inline-flex items-center justify-center gap-2 rounded-2xl bg-primary/15 px-4 py-3 font-data text-[10px] uppercase tracking-[0.16em] text-primary hover:bg-primary/20 transition-colors"
+          className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-primary/15 px-4 py-3 font-data text-[10px] uppercase tracking-[0.16em] text-primary hover:bg-primary/20 transition-colors"
         >
-          <ShieldCheck className="w-4 h-4" strokeWidth={1.8} />
-          {primaryActionLabel}
+          <ShieldCheck className="w-4 h-4 shrink-0" strokeWidth={1.8} />
+          <span className="leading-tight text-center">{primaryActionLabel}</span>
         </button>
 
-        <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={() => onEdit(appointment)}
-            className="inline-flex items-center gap-2 rounded-full border border-surface-variant/20 bg-surface-variant/10 px-4 py-2 font-data text-[10px] uppercase tracking-[0.16em] text-text-primary hover:bg-surface-variant/20 transition-colors"
-          >
-            <FilePenLine className="w-4 h-4" strokeWidth={1.8} />
-            {editLabel}
-          </button>
+        <button
+          type="button"
+          onClick={() => onEdit(appointment)}
+          className="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-surface-variant/20 bg-surface-variant/10 px-4 py-3 font-data text-[10px] uppercase tracking-[0.16em] text-text-primary hover:bg-surface-variant/20 transition-colors"
+        >
+          <FilePenLine className="w-4 h-4 shrink-0" strokeWidth={1.8} />
+          <span className="leading-tight text-center">{editLabel}</span>
+        </button>
 
-          <button
-            type="button"
-            onClick={() => onDelete(appointment)}
-            className="inline-flex items-center gap-2 rounded-full bg-[#CD8282]/10 px-4 py-2 font-data text-[10px] uppercase tracking-[0.16em] text-[#CD8282] hover:bg-[#CD8282]/15 transition-colors"
-          >
-            <Trash2 className="w-4 h-4" strokeWidth={1.8} />
-            Excluir
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={() => onDelete(appointment)}
+          className="col-span-2 inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-[#CD8282]/10 px-4 py-3 font-data text-[10px] uppercase tracking-[0.16em] text-[#CD8282] hover:bg-[#CD8282]/15 transition-colors"
+        >
+          <Trash2 className="w-4 h-4 shrink-0" strokeWidth={1.8} />
+          <span className="leading-tight text-center">Excluir</span>
+        </button>
       </div>
     </article>
   );
