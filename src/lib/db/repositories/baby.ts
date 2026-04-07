@@ -18,11 +18,16 @@ export async function saveBaby(
 }
 
 export async function getBabyByUserId(userId: string): Promise<Baby | null> {
+  const babies = await getBabiesByUserId(userId);
+  return babies[0] ?? null;
+}
+
+export async function getBabiesByUserId(userId: string): Promise<Baby[]> {
   const db = await getDB();
   const tx = db.transaction("babies");
   const index = tx.store.index("byUserId");
-  const result = await index.get(userId);
-  return result ?? null;
+  const results = await index.getAll(userId);
+  return results.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
 }
 
 export async function getBabyById(id: string): Promise<Baby | null> {

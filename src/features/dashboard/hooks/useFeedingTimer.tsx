@@ -1,6 +1,14 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 const STORAGE_KEY = "korb_feeding_state";
 
@@ -165,18 +173,26 @@ function getInitialFeedingTimerState(): FeedingTimerState {
 
 export function FeedingTimerProvider({ children }: { children: React.ReactNode }) {
   const [timerState, setTimerState] = useState<FeedingTimerState>(getInitialFeedingTimerState);
+  const timerStateRef = useRef(timerState);
+
+  const commitTimerState = useCallback(
+    (updater: (currentState: FeedingTimerState) => FeedingTimerState) => {
+      const nextState = updater(timerStateRef.current);
+      timerStateRef.current = nextState;
+      persistFeedingState(buildPersistedFeedingState(nextState));
+      setTimerState(nextState);
+      return nextState;
+    },
+    []
+  );
 
   const syncNow = useCallback(() => {
-    setTimerState((currentState) => syncActiveSeconds(currentState));
-  }, []);
+    commitTimerState((currentState) => syncActiveSeconds(currentState));
+  }, [commitTimerState]);
 
   const syncAndPersistNow = useCallback(() => {
-    setTimerState((currentState) => {
-      const syncedState = syncActiveSeconds(currentState);
-      persistFeedingState(buildPersistedFeedingState(syncedState));
-      return syncedState;
-    });
-  }, []);
+    commitTimerState((currentState) => syncActiveSeconds(currentState));
+  }, [commitTimerState]);
 
   useEffect(() => {
     if (!timerState.isActive) {
@@ -205,27 +221,29 @@ export function FeedingTimerProvider({ children }: { children: React.ReactNode }
       syncNow();
     };
 
+    const handleBlur = () => {
+      syncAndPersistNow();
+    };
+
     window.addEventListener("focus", syncNow);
+    window.addEventListener("blur", handleBlur);
     window.addEventListener("pageshow", handlePageShow);
     window.addEventListener("pagehide", handlePageHide);
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
       window.removeEventListener("focus", syncNow);
+      window.removeEventListener("blur", handleBlur);
       window.removeEventListener("pageshow", handlePageShow);
       window.removeEventListener("pagehide", handlePageHide);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [syncAndPersistNow, syncNow]);
 
-  useEffect(() => {
-    persistFeedingState(buildPersistedFeedingState(timerState));
-  }, [timerState]);
-
   const start = useCallback(() => {
     const now = new Date().toISOString();
 
-    setTimerState((currentState) => {
+    commitTimerState((currentState) => {
       if (currentState.isActive) {
         return currentState;
       }
@@ -237,10 +255,10 @@ export function FeedingTimerProvider({ children }: { children: React.ReactNode }
         segmentStartedAt: now,
       };
     });
-  }, []);
+  }, [commitTimerState]);
 
   const pause = useCallback(() => {
-    setTimerState((currentState) => {
+    commitTimerState((currentState) => {
       const syncedState = syncActiveSeconds(currentState);
       if (!syncedState.isActive) {
         return syncedState;
@@ -252,12 +270,12 @@ export function FeedingTimerProvider({ children }: { children: React.ReactNode }
         segmentStartedAt: null,
       };
     });
-  }, []);
+  }, [commitTimerState]);
 
   const resume = useCallback(() => {
     const now = new Date().toISOString();
 
-    setTimerState((currentState) => {
+    commitTimerState((currentState) => {
       if (currentState.isActive) {
         return currentState;
       }
@@ -269,17 +287,18 @@ export function FeedingTimerProvider({ children }: { children: React.ReactNode }
         segmentStartedAt: now,
       };
     });
-  }, []);
+  }, [commitTimerState]);
 
   const reset = useCallback(() => {
-    setTimerState(DEFAULT_TIMER_STATE);
+    timerStateRef.current = DEFAULT_TIMER_STATE;
     persistFeedingState(null);
+    setTimerState(DEFAULT_TIMER_STATE);
   }, []);
 
   const switchSide = useCallback(() => {
     const now = new Date().toISOString();
 
-    setTimerState((currentState) => {
+    commitTimerState((currentState) => {
       const syncedState = syncActiveSeconds(currentState);
 
       return {
@@ -288,7 +307,7 @@ export function FeedingTimerProvider({ children }: { children: React.ReactNode }
         segmentStartedAt: syncedState.isActive ? now : null,
       };
     });
-  }, []);
+  }, [commitTimerState]);
 
   const value = useMemo<FeedingTimerContextValue>(
     () => ({

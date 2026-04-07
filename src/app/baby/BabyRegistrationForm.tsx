@@ -13,12 +13,16 @@ import {
 } from "@/components/ui";
 import { babyRegistrationSchema, type BabyRegistrationInput } from "@/features/baby/schemas";
 import { useBaby } from "@/contexts/BabyContext";
+import { useAuthContext } from "@/contexts/AuthContext";
+import { JoinFamilySheet } from "@/features/baby/components/JoinFamilySheet";
 
 export function BabyRegistrationForm() {
-  const { saveBaby } = useBaby();
+  const { saveBaby, refreshBabies } = useBaby();
+  const { user } = useAuthContext();
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Partial<Record<keyof BabyRegistrationInput, string>>>({});
+  const [isJoinSheetOpen, setIsJoinSheetOpen] = useState(false);
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -147,8 +151,31 @@ export function BabyRegistrationForm() {
             {isSubmitting ? "SALVANDO..." : "TUDO PRONTO!"}
             {!isSubmitting && <ArrowRight className="w-6 h-6" strokeWidth={2.5} />}
           </button>
+
+          <p className="text-center mt-4 font-data text-sm text-text-secondary">
+            Ja tem uma familia?{" "}
+            <button
+              type="button"
+              onClick={() => setIsJoinSheetOpen(true)}
+              className="text-[#88AFC7] hover:underline"
+            >
+              Entre com o codigo
+            </button>
+          </p>
         </div>
       </form>
+
+      {user && (
+        <JoinFamilySheet
+          isOpen={isJoinSheetOpen}
+          onClose={() => setIsJoinSheetOpen(false)}
+          userId={user.id}
+          onSuccess={async () => {
+            await refreshBabies();
+            router.push("/dashboard");
+          }}
+        />
+      )}
     </div>
   );
 }

@@ -1,4 +1,11 @@
-export { saveBaby, getBabyByUserId, getBabyById, updateBaby, deleteBaby } from "./baby";
+export {
+  saveBaby,
+  getBabyByUserId,
+  getBabiesByUserId,
+  getBabyById,
+  updateBaby,
+  deleteBaby,
+} from "./baby";
 export { saveFeeding, getFeedingsByBabyId, getRecentFeedings } from "./feeding";
 export { saveDiaper, getDiapersByBabyId, getRecentDiapers } from "./diaper";
 export {

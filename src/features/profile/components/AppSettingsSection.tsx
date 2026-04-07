@@ -4,7 +4,12 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { ChevronRight } from "lucide-react";
 import { Sheet } from "@/components/ui/Sheet";
+import { useBaby } from "@/contexts/BabyContext";
+import { useAuthContext } from "@/contexts/AuthContext";
 import { useAppSettings } from "../hooks/useAppSettings";
+import { FamilyMembershipSection } from "./FamilyMembershipSection";
+import { InviteCodeSection } from "./InviteCodeSection";
+import { JoinFamilySection } from "./JoinFamilySection";
 import type { Language, WeightUnit, VolumeUnit } from "../types";
 
 const container = {
@@ -182,6 +187,8 @@ function CustomSelector({ label, value, options, onChange }: CustomSelectorProps
 
 export function AppSettingsSection() {
   const { settings, updateSetting, isHydrated } = useAppSettings();
+  const { baby } = useBaby();
+  const { user } = useAuthContext();
 
   if (!isHydrated) {
     return (
@@ -208,6 +215,24 @@ export function AppSettingsSection() {
       <h3 className="font-display text-lg font-medium text-text-primary tracking-tight mb-4">
         Configuracoes do App
       </h3>
+
+      {baby && user && (
+        <FamilyMembershipSection
+          babyId={baby.id}
+          babyName={baby.name}
+          familyName={baby.familyName}
+          userId={user.id}
+          userName={user.name}
+        />
+      )}
+
+      {baby && user && (
+        <InviteCodeSection babyId={baby.id} userId={user.id} />
+      )}
+
+      {user && (
+        <JoinFamilySection userId={user.id} />
+      )}
 
       <motion.div
         variants={item}

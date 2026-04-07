@@ -1,7 +1,7 @@
 import { openDB, type IDBPDatabase } from "idb";
 
 const DB_NAME = "korb-db";
-const DB_VERSION = 8;
+const DB_VERSION = 9;
 
 let dbPromise: Promise<IDBPDatabase> | null = null;
 
@@ -11,7 +11,18 @@ export function getDB(): Promise<IDBPDatabase> {
       upgrade(db, oldVersion, _newVersion, tx) {
         if (!db.objectStoreNames.contains("babies")) {
           const s = db.createObjectStore("babies", { keyPath: "id" });
-          s.createIndex("byUserId", "userId", { unique: true });
+          s.createIndex("byUserId", "userId");
+        } else if (oldVersion > 0 && oldVersion < 9 && tx) {
+          const s = tx.objectStore("babies");
+          if (s.indexNames.contains("byUserId")) {
+            const userIndex = s.index("byUserId");
+            if (userIndex.unique) {
+              s.deleteIndex("byUserId");
+              s.createIndex("byUserId", "userId");
+            }
+          } else {
+            s.createIndex("byUserId", "userId");
+          }
         }
 
         if (!db.objectStoreNames.contains("feedings")) {

@@ -292,7 +292,7 @@ export type Database = {
           code: string
           created_at: string
           created_by: string
-          expires_at: string
+          expires_at: string | null
           role: string
           used_at: string | null
           used_by: string | null
@@ -302,7 +302,7 @@ export type Database = {
           code: string
           created_at?: string
           created_by: string
-          expires_at?: string
+          expires_at?: string | null
           role?: string
           used_at?: string | null
           used_by?: string | null
@@ -492,7 +492,13 @@ export type Database = {
         }
         Returns: undefined
       }
+      generate_invite_code: { Args: never; Returns: string }
+      is_baby_owner: { Args: { p_baby_id: string }; Returns: boolean }
       is_caregiver: { Args: { p_baby_id: string }; Returns: boolean }
+      join_family_with_code: {
+        Args: { p_code: string; p_user_id: string }
+        Returns: Json
+      }
     }
     Enums: {
       [_ in never]: never

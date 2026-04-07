@@ -15,6 +15,10 @@ export async function getBabyByUserId(userId: string): Promise<Baby | null> {
   return idb.getBabyByUserId(userId);
 }
 
+export async function getBabiesByUserId(userId: string): Promise<Baby[]> {
+  return idb.getBabiesByUserId(userId);
+}
+
 export async function getBabyById(id: string): Promise<Baby | null> {
   return idb.getBabyById(id);
 }

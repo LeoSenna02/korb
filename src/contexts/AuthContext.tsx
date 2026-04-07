@@ -11,7 +11,7 @@ import { useRouter } from "next/navigation";
 import type { SupabaseClient, User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 import type { AuthError } from "@/lib/auth/types";
-import { getBabyByUserId } from "@/lib/sync/repositories/baby";
+import { getBabiesByUserId } from "@/lib/sync/repositories/baby";
 import { getDB } from "@/lib/db";
 import type { Baby } from "@/lib/db/types";
 import { pullAllDataFromServer } from "@/lib/sync/pull";
@@ -63,8 +63,8 @@ async function checkUserHasBaby(
   supabase: SupabaseClient
 ): Promise<boolean> {
   try {
-    const localBaby = await getBabyByUserId(userId);
-    if (localBaby) {
+    const localBabies = await getBabiesByUserId(userId);
+    if (localBabies.length > 0) {
       pullAllDataFromServer(supabase, userId).catch((err) => {
         console.warn("[AuthContext] Background pull failed:", err);
       });

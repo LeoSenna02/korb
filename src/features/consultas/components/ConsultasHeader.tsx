@@ -3,11 +3,9 @@
 import {
   CalendarHeart,
   CalendarPlus2,
-  ChevronLeft,
   Clock3,
   ShieldCheck,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
 import type { AppointmentSummary } from "../types";
 
 interface ConsultasHeaderProps extends AppointmentSummary {
@@ -21,20 +19,9 @@ export function ConsultasHeader({
   attendedAppointments,
   onCreate,
 }: ConsultasHeaderProps) {
-  const router = useRouter();
-
   return (
     <div className="mb-8">
-      <div className="flex items-center justify-between gap-3 mb-4">
-        <button
-          type="button"
-          onClick={() => router.back()}
-          className="w-10 h-10 rounded-full bg-surface-container-low flex items-center justify-center text-text-secondary hover:text-text-primary hover:bg-surface-variant/50 transition-colors"
-          aria-label="Voltar"
-        >
-          <ChevronLeft className="w-6 h-6" />
-        </button>
-
+      <div className="flex items-center justify-end gap-3 mb-4">
         <button
           type="button"
           onClick={onCreate}
