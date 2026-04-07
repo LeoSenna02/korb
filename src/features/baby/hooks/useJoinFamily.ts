@@ -3,6 +3,7 @@
 import { useCallback, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { pullAllDataFromServer } from "@/lib/sync/pull";
+import { getBabyById } from "@/lib/sync/repositories/baby";
 
 export type JoinFamilyError = "INVALID_CODE" | "ALREADY_MEMBER" | "NETWORK_ERROR";
 
@@ -14,7 +15,7 @@ export interface JoinFamilyResult {
 
 interface UseJoinFamilyOptions {
   userId: string;
-  onSuccess?: (babyId: string) => void;
+  onSuccess?: (babyId: string) => void | Promise<void>;
 }
 
 interface UseJoinFamilyReturn {
@@ -23,6 +24,32 @@ interface UseJoinFamilyReturn {
   error: JoinFamilyError | null;
   joinFamily: (code: string) => Promise<JoinFamilyResult>;
   reset: () => void;
+}
+
+function delay(ms: number) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
+async function ensureJoinedBabyIsAvailable(
+  babyId: string,
+  userId: string
+): Promise<boolean> {
+  const supabase = createClient();
+
+  for (let attempt = 0; attempt < 4; attempt += 1) {
+    await pullAllDataFromServer(supabase, userId);
+    const joinedBaby = await getBabyById(babyId);
+
+    if (joinedBaby) {
+      return true;
+    }
+
+    await delay(300);
+  }
+
+  return false;
 }
 
 export function useJoinFamily({ userId, onSuccess }: UseJoinFamilyOptions): UseJoinFamilyReturn {
@@ -60,13 +87,17 @@ export function useJoinFamily({ userId, onSuccess }: UseJoinFamilyOptions): UseJ
           return result;
         }
 
-        await pullAllDataFromServer(supabase, userId);
+        if (result.babyId) {
+          await ensureJoinedBabyIsAvailable(result.babyId, userId);
+        } else {
+          await pullAllDataFromServer(supabase, userId);
+        }
 
         setIsJoining(false);
         setIsSuccess(true);
 
         if (result.babyId && onSuccess) {
-          onSuccess(result.babyId);
+          await onSuccess(result.babyId);
         }
 
         return result;
