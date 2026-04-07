@@ -1,6 +1,8 @@
+import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Droplets, Moon, Scale, ArrowRight } from "lucide-react";
 import { BrandLogo } from "@/components/branding/BrandLogo";
+import { createClient } from "@/lib/supabase/server";
 
 const features = [
   {
@@ -25,7 +27,16 @@ const features = [
   },
 ];
 
-export default function Onboarding() {
+export default async function Onboarding() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (user) {
+    redirect("/dashboard");
+  }
+
   return (
     <main className="min-h-screen bg-surface-dim flex flex-col">
       <section className="flex-1 flex flex-col items-center justify-center px-6 pt-16 pb-12">

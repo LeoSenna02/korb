@@ -70,6 +70,29 @@ function persistFeedingState(state: PersistedFeedingState | null) {
   localStorage.removeItem(STORAGE_KEY);
 }
 
+function buildPersistedFeedingState(
+  state: FeedingTimerState
+): PersistedFeedingState | null {
+  if (
+    state.leftSeconds === 0 &&
+    state.rightSeconds === 0 &&
+    state.startedAt === null
+  ) {
+    return null;
+  }
+
+  return {
+    startedAt: state.startedAt ?? new Date().toISOString(),
+    type: "both",
+    activeSide: state.activeSide,
+    leftSeconds: state.leftSeconds,
+    rightSeconds: state.rightSeconds,
+    isPaused: !state.isActive,
+    segmentStartedAt: state.segmentStartedAt,
+    updatedAt: new Date().toISOString(),
+  };
+}
+
 function consumeElapsedSeconds(segmentStartedAt: string, nowMs: number) {
   const segmentStartedAtMs = new Date(segmentStartedAt).getTime();
   const elapsedMs = Math.max(0, nowMs - segmentStartedAtMs);
@@ -147,6 +170,14 @@ export function FeedingTimerProvider({ children }: { children: React.ReactNode }
     setTimerState((currentState) => syncActiveSeconds(currentState));
   }, []);
 
+  const syncAndPersistNow = useCallback(() => {
+    setTimerState((currentState) => {
+      const syncedState = syncActiveSeconds(currentState);
+      persistFeedingState(buildPersistedFeedingState(syncedState));
+      return syncedState;
+    });
+  }, []);
+
   useEffect(() => {
     if (!timerState.isActive) {
       return;
@@ -158,38 +189,37 @@ export function FeedingTimerProvider({ children }: { children: React.ReactNode }
 
   useEffect(() => {
     const handleVisibilityChange = () => {
+      if (document.visibilityState === "hidden") {
+        syncAndPersistNow();
+        return;
+      }
+
+      syncNow();
+    };
+
+    const handlePageHide = () => {
+      syncAndPersistNow();
+    };
+
+    const handlePageShow = () => {
       syncNow();
     };
 
     window.addEventListener("focus", syncNow);
+    window.addEventListener("pageshow", handlePageShow);
+    window.addEventListener("pagehide", handlePageHide);
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
       window.removeEventListener("focus", syncNow);
+      window.removeEventListener("pageshow", handlePageShow);
+      window.removeEventListener("pagehide", handlePageHide);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, [syncNow]);
+  }, [syncAndPersistNow, syncNow]);
 
   useEffect(() => {
-    if (
-      timerState.leftSeconds === 0 &&
-      timerState.rightSeconds === 0 &&
-      timerState.startedAt === null
-    ) {
-      persistFeedingState(null);
-      return;
-    }
-
-    persistFeedingState({
-      startedAt: timerState.startedAt ?? new Date().toISOString(),
-      type: "both",
-      activeSide: timerState.activeSide,
-      leftSeconds: timerState.leftSeconds,
-      rightSeconds: timerState.rightSeconds,
-      isPaused: !timerState.isActive,
-      segmentStartedAt: timerState.segmentStartedAt,
-      updatedAt: timerState.segmentStartedAt ?? new Date().toISOString(),
-    });
+    persistFeedingState(buildPersistedFeedingState(timerState));
   }, [timerState]);
 
   const start = useCallback(() => {

@@ -99,63 +99,112 @@ DateInput.displayName = "DateInput";
 
 function ScrollWheel({ options, value, onChange, widthClass }: { options: string[], value: string, onChange: (v: string) => void, widthClass: string }) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const isAnimating = useRef(false);
+  const isInteracting = useRef(false);
+  const settleTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const idx = options.indexOf(value);
-    if (idx !== -1 && containerRef.current) {
+    if (!isInteracting.current && idx !== -1 && containerRef.current) {
       containerRef.current.scrollTop = idx * ITEM_HEIGHT;
     }
   }, [options, value]);
+
+  const finalizeScrollPosition = useCallback(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const idx = Math.min(
+      Math.max(Math.round(el.scrollTop / ITEM_HEIGHT), 0),
+      options.length - 1
+    );
+    const nextValue = options[idx];
+
+    el.scrollTo({ top: idx * ITEM_HEIGHT, behavior: "smooth" });
+    isInteracting.current = false;
+
+    if (nextValue !== value) {
+      onChange(nextValue);
+    }
+  }, [onChange, options, value]);
+
+  const scheduleFinalize = useCallback(() => {
+    if (settleTimeoutRef.current) {
+      clearTimeout(settleTimeoutRef.current);
+    }
+
+    settleTimeoutRef.current = setTimeout(() => {
+      finalizeScrollPosition();
+      settleTimeoutRef.current = null;
+    }, 120);
+  }, [finalizeScrollPosition]);
 
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
 
-    let debounce: ReturnType<typeof setTimeout> | null = null;
-
     function onWheel(e: WheelEvent) {
+      e.stopPropagation();
       e.preventDefault();
       const container = containerRef.current;
       if (!container) return;
 
-      if (debounce) return;
-      debounce = setTimeout(() => { debounce = null; }, 200);
+      isInteracting.current = true;
 
-      const direction = e.deltaY > 0 ? 1 : -1;
-      const currentIdx = Math.round(container.scrollTop / ITEM_HEIGHT);
-      const target = Math.min(Math.max(currentIdx + direction, 0), options.length - 1);
+      const maxScrollTop = (options.length - 1) * ITEM_HEIGHT;
+      const nextTop = Math.min(
+        Math.max(container.scrollTop + e.deltaY, 0),
+        maxScrollTop
+      );
 
-      isAnimating.current = true;
-      container.scrollTo({ top: target * ITEM_HEIGHT, behavior: "smooth" });
-
-      onChange(options[target]);
-
-      setTimeout(() => { isAnimating.current = false; }, 300);
+      container.scrollTop = nextTop;
+      scheduleFinalize();
     }
 
     el.addEventListener("wheel", onWheel, { passive: false });
     return () => {
       el.removeEventListener("wheel", onWheel);
-      if (debounce) clearTimeout(debounce);
     };
-  }, [options, onChange]);
+  }, [options.length, scheduleFinalize]);
+
+  useEffect(() => {
+    return () => {
+      if (settleTimeoutRef.current) {
+        clearTimeout(settleTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleScroll = useCallback(() => {
-    if (isAnimating.current) return;
     const el = containerRef.current;
     if (!el) return;
 
-    const idx = Math.round(el.scrollTop / ITEM_HEIGHT);
-    const newValue = options[Math.min(Math.max(idx, 0), options.length - 1)];
-    onChange(newValue);
-  }, [options, onChange]);
+    isInteracting.current = true;
+
+    const idx = Math.min(
+      Math.max(Math.round(el.scrollTop / ITEM_HEIGHT), 0),
+      options.length - 1
+    );
+    const newValue = options[idx];
+
+    if (newValue !== value) {
+      onChange(newValue);
+    }
+
+    scheduleFinalize();
+  }, [onChange, options, scheduleFinalize, value]);
 
   return (
     <div
       ref={containerRef}
       onScroll={handleScroll}
-      className={`h-full overflow-y-auto snap-y snap-mandatory scrollbar-none [&::-webkit-scrollbar]:hidden ${widthClass}`}
+      onTouchStartCapture={() => {
+        isInteracting.current = true;
+      }}
+      onTouchMoveCapture={() => {
+        isInteracting.current = true;
+      }}
+      className={`h-full overflow-y-auto overscroll-contain snap-y snap-mandatory scrollbar-none touch-pan-y [&::-webkit-scrollbar]:hidden ${widthClass}`}
+      style={{ WebkitOverflowScrolling: "touch" }}
     >
       <div style={{ height: ITEM_HEIGHT }} />
       {options.map((opt) => (

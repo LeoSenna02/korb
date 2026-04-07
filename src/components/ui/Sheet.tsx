@@ -53,6 +53,7 @@ export function Sheet({
             exit={{ y: "100%" }}
             transition={sheetTransition}
             className="fixed bottom-0 left-2 right-2 bg-surface-container-low rounded-t-3xl z-[70] px-6 pt-3 pb-safe max-h-[90vh] overflow-y-auto no-scrollbar shadow-2xl transform-gpu will-change-transform"
+            style={{ WebkitOverflowScrolling: "touch" }}
           >
             {/* Drag handle */}
             <div className="flex justify-center mb-4">
