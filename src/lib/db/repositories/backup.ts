@@ -11,6 +11,7 @@ import { getMilestonesByBabyId } from "./milestone";
 import { getSleepsByBabyId } from "./sleep";
 import { getVaccinesByBabyId } from "./vaccine";
 import { getAppointmentsByBabyId } from "./appointment";
+import { emitDataSyncEvent } from "@/lib/sync/events";
 
 function mapBabyToBackupProfile(baby: Baby): BabyBackupPayload["baby"] {
   return {
@@ -207,4 +208,5 @@ export async function replaceBabyDataFromBackup(
   }
 
   await tx.done;
+  emitDataSyncEvent();
 }

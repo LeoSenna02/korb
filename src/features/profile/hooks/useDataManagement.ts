@@ -15,6 +15,7 @@ import {
   readFileText,
   writeAppSettings,
 } from "../utils/data-transfer";
+import type { ZodError } from "zod";
 
 interface FeedbackState {
   type: "success" | "error";
@@ -51,6 +52,15 @@ function getErrorMessage(error: unknown): string {
   }
 
   return "Nao foi possivel concluir esta acao.";
+}
+
+function getValidationErrorMessage(error: ZodError): string {
+  const issues = error.issues.slice(0, 3).map((issue) => {
+    const path = issue.path.length > 0 ? issue.path.join(".") : "arquivo";
+    return `${path}: ${issue.message}`;
+  });
+
+  return `Arquivo invalido. Ajuste estes campos: ${issues.join(" | ")}`;
 }
 
 export function useDataManagement({
@@ -127,7 +137,7 @@ export function useDataManagement({
         const parsedPayload = babyBackupPayloadSchema.safeParse(parsedJson);
 
         if (!parsedPayload.success) {
-          throw new Error("Arquivo invalido. Confira se o JSON foi exportado pelo Korb.");
+          throw new Error(getValidationErrorMessage(parsedPayload.error));
         }
 
         const preview = createImportPreview(file.name, parsedPayload.data);

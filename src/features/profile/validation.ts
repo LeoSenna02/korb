@@ -1,5 +1,44 @@
 import { z } from "zod";
 
+const optionalStringSchema = z
+  .union([z.string(), z.null(), z.undefined()])
+  .transform((value) => {
+    if (typeof value !== "string") {
+      return undefined;
+    }
+
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : undefined;
+  });
+
+const requiredStringSchema = z
+  .union([z.string(), z.number()])
+  .transform((value) => String(value).trim())
+  .pipe(z.string().min(1));
+
+const optionalNumberSchema = z
+  .union([z.number(), z.string(), z.null(), z.undefined()])
+  .transform((value) => {
+    if (value == null || value === "") {
+      return undefined;
+    }
+
+    const parsed =
+      typeof value === "number" ? value : Number(String(value).replace(",", "."));
+
+    return Number.isFinite(parsed) ? parsed : undefined;
+  });
+
+const nonNegativeOptionalNumberSchema = optionalNumberSchema.refine(
+  (value) => value == null || value >= 0,
+  "Numero invalido"
+);
+
+const positiveOptionalIntegerSchema = optionalNumberSchema.refine(
+  (value) => value == null || (Number.isInteger(value) && value > 0),
+  "Numero invalido"
+);
+
 const bloodTypeSchema = z.enum([
   "A+",
   "A-",
@@ -12,131 +51,161 @@ const bloodTypeSchema = z.enum([
 ]);
 
 const babySchema = z.object({
-  name: z.string().min(1),
-  familyName: z.string().min(1),
-  birthDate: z.string().min(1),
-  birthTime: z.string().optional(),
-  gender: z.enum(["girl", "boy"]),
-  bloodType: bloodTypeSchema.optional(),
-  photoUrl: z.string().optional(),
+  name: requiredStringSchema,
+  familyName: optionalStringSchema.transform((value) => value ?? ""),
+  birthDate: requiredStringSchema,
+  birthTime: optionalStringSchema,
+  gender: z
+    .union([
+      z.enum(["girl", "boy"]),
+      z.enum(["female", "male"]),
+    ])
+    .transform((value) => (value === "female" ? "girl" : value === "male" ? "boy" : value)),
+  bloodType: z.union([bloodTypeSchema, z.null(), z.undefined()]).transform((value) => value ?? undefined),
+  photoUrl: optionalStringSchema,
 });
 
 const feedingRecordSchema = z.object({
-  id: z.string().min(1),
-  babyId: z.string().min(1),
+  id: optionalStringSchema.transform((value) => value ?? "legacy-feeding"),
+  babyId: optionalStringSchema.transform((value) => value ?? "legacy-baby"),
   type: z.enum(["left", "right", "bottle", "both"]),
-  durationSeconds: z.number().int().nonnegative().optional(),
-  leftSeconds: z.number().int().nonnegative().optional(),
-  rightSeconds: z.number().int().nonnegative().optional(),
-  volumeMl: z.number().nonnegative().optional(),
-  notes: z.string().optional(),
-  startedAt: z.string().min(1),
-  createdAt: z.string().min(1),
+  durationSeconds: nonNegativeOptionalNumberSchema.refine(
+    (value) => value == null || Number.isInteger(value),
+    "Numero invalido"
+  ),
+  leftSeconds: nonNegativeOptionalNumberSchema.refine(
+    (value) => value == null || Number.isInteger(value),
+    "Numero invalido"
+  ),
+  rightSeconds: nonNegativeOptionalNumberSchema.refine(
+    (value) => value == null || Number.isInteger(value),
+    "Numero invalido"
+  ),
+  volumeMl: nonNegativeOptionalNumberSchema,
+  notes: optionalStringSchema,
+  startedAt: requiredStringSchema,
+  createdAt: requiredStringSchema,
 });
 
 const diaperRecordSchema = z.object({
-  id: z.string().min(1),
-  babyId: z.string().min(1),
+  id: optionalStringSchema.transform((value) => value ?? "legacy-diaper"),
+  babyId: optionalStringSchema.transform((value) => value ?? "legacy-baby"),
   type: z.enum(["xixi", "coco", "ambos"]),
   consistency: z.enum(["liquido", "pastoso", "solido"]),
   color: z.enum(["#8B4513", "#DAA520", "#556B2F"]),
-  notes: z.string().optional(),
-  changedAt: z.string().min(1),
-  createdAt: z.string().min(1),
+  notes: optionalStringSchema,
+  changedAt: requiredStringSchema,
+  createdAt: requiredStringSchema,
 });
 
 const growthRecordSchema = z.object({
-  id: z.string().min(1),
-  babyId: z.string().min(1),
-  weightKg: z.number().nonnegative().optional(),
-  heightCm: z.number().nonnegative().optional(),
-  cephalicCm: z.number().nonnegative().optional(),
-  notes: z.string().optional(),
-  measuredAt: z.string().min(1),
-  createdAt: z.string().min(1),
+  id: optionalStringSchema.transform((value) => value ?? "legacy-growth"),
+  babyId: optionalStringSchema.transform((value) => value ?? "legacy-baby"),
+  weightKg: nonNegativeOptionalNumberSchema,
+  heightCm: nonNegativeOptionalNumberSchema,
+  cephalicCm: nonNegativeOptionalNumberSchema,
+  notes: optionalStringSchema,
+  measuredAt: requiredStringSchema,
+  createdAt: requiredStringSchema,
 });
 
 const sleepRecordSchema = z.object({
-  id: z.string().min(1),
-  babyId: z.string().min(1),
+  id: optionalStringSchema.transform((value) => value ?? "legacy-sleep"),
+  babyId: optionalStringSchema.transform((value) => value ?? "legacy-baby"),
   type: z.enum(["nap", "night"]),
-  startedAt: z.string().min(1),
-  endedAt: z.string().optional(),
-  notes: z.string().optional(),
-  createdAt: z.string().min(1),
+  startedAt: requiredStringSchema,
+  endedAt: optionalStringSchema,
+  notes: optionalStringSchema,
+  createdAt: requiredStringSchema,
 });
 
 const milestoneRecordSchema = z.object({
-  id: z.string().min(1),
-  babyId: z.string().min(1),
-  milestoneId: z.string().min(1),
-  category: z.enum(["motor_grossa", "motor_fina", "linguagem", "social"]),
-  name: z.string().min(1),
-  description: z.string().min(1),
-  expectedAgeMonthsMin: z.number().nonnegative(),
-  expectedAgeMonthsMax: z.number().nonnegative(),
-  actualDate: z.string().optional(),
-  notes: z.string().optional(),
+  id: optionalStringSchema.transform((value) => value ?? "legacy-milestone"),
+  babyId: optionalStringSchema.transform((value) => value ?? "legacy-baby"),
+  milestoneId: optionalStringSchema.transform((value) => value ?? "legacy-milestone-template"),
+  category: z
+    .string()
+    .trim()
+    .transform((value) => {
+      const normalized = value
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .replace(/\s+/g, "_");
+
+      if (normalized === "motor_grossa") return "motor_grossa";
+      if (normalized === "motor_fina") return "motor_fina";
+      if (normalized === "linguagem") return "linguagem";
+      return "social";
+    }),
+  name: requiredStringSchema,
+  description: optionalStringSchema.transform((value) => value ?? ""),
+  expectedAgeMonthsMin: optionalNumberSchema.transform((value) => value ?? 0),
+  expectedAgeMonthsMax: optionalNumberSchema.transform((value) => value ?? 0),
+  actualDate: optionalStringSchema,
+  notes: optionalStringSchema,
   isCustom: z.boolean(),
-  createdAt: z.string().min(1),
-  updatedAt: z.string().min(1),
+  createdAt: requiredStringSchema,
+  updatedAt: requiredStringSchema,
 });
 
 const vaccineRecordSchema = z.object({
-  id: z.string().min(1),
-  babyId: z.string().min(1),
-  vaccineId: z.string().min(1),
-  name: z.string().min(1),
-  doseLabel: z.string().optional(),
-  scheduledMonth: z.number().int().nonnegative(),
-  appliedDate: z.string().optional(),
-  appliedLocation: z.string().optional(),
-  notes: z.string().optional(),
+  id: optionalStringSchema.transform((value) => value ?? "legacy-vaccine"),
+  babyId: optionalStringSchema.transform((value) => value ?? "legacy-baby"),
+  vaccineId: optionalStringSchema.transform((value) => value ?? "legacy-vaccine-template"),
+  name: requiredStringSchema,
+  doseLabel: optionalStringSchema,
+  scheduledMonth: optionalNumberSchema.transform((value) => value ?? 0),
+  appliedDate: optionalStringSchema,
+  appliedLocation: optionalStringSchema,
+  notes: optionalStringSchema,
   isCustom: z.boolean(),
-  createdAt: z.string().min(1),
-  updatedAt: z.string().min(1),
+  createdAt: requiredStringSchema,
+  updatedAt: requiredStringSchema,
 });
 
 const appointmentRecordSchema = z.object({
-  id: z.string().min(1),
-  babyId: z.string().min(1),
-  doctorName: z.string().min(1),
-  location: z.string().min(1),
-  reason: z.string().min(1),
-  scheduledAt: z.string().min(1),
+  id: optionalStringSchema.transform((value) => value ?? "legacy-appointment"),
+  babyId: optionalStringSchema.transform((value) => value ?? "legacy-baby"),
+  doctorName: requiredStringSchema,
+  location: requiredStringSchema,
+  reason: requiredStringSchema,
+  scheduledAt: requiredStringSchema,
   status: z.enum(["scheduled", "attended"]),
-  preVisitNotes: z.string().optional(),
-  postVisitNotes: z.string().optional(),
-  followUpIntervalDays: z.number().int().positive().optional(),
-  followUpInstructions: z.string().optional(),
-  linkedGrowthId: z.string().optional(),
-  linkedVaccineIds: z.array(z.string()).default([]),
-  attendedAt: z.string().optional(),
-  createdAt: z.string().min(1),
-  updatedAt: z.string().min(1),
+  preVisitNotes: optionalStringSchema,
+  postVisitNotes: optionalStringSchema,
+  followUpIntervalDays: positiveOptionalIntegerSchema,
+  followUpInstructions: optionalStringSchema,
+  linkedGrowthId: optionalStringSchema,
+  linkedVaccineIds: z.array(z.string()).nullish().transform((value) => value ?? []),
+  attendedAt: optionalStringSchema,
+  createdAt: requiredStringSchema,
+  updatedAt: requiredStringSchema,
 });
 
 export const appSettingsSchema = z.object({
-  notificationsEnabled: z.boolean(),
-  soundEnabled: z.boolean(),
-  darkMode: z.boolean(),
-  language: z.enum(["pt-BR", "en-US", "es-ES"]),
-  weightUnit: z.enum(["kg", "lb"]),
-  volumeUnit: z.enum(["ml", "oz"]),
+  notificationsEnabled: z.boolean().default(true),
+  soundEnabled: z.boolean().default(true),
+  darkMode: z.boolean().default(true),
+  language: z.enum(["pt-BR", "en-US", "es-ES"]).default("pt-BR"),
+  weightUnit: z.enum(["kg", "lb"]).default("kg"),
+  volumeUnit: z.enum(["ml", "oz"]).default("ml"),
 });
 
 export const babyBackupPayloadSchema = z.object({
-  schemaVersion: z.literal(1),
-  exportedAt: z.string().min(1),
+  schemaVersion: z.union([z.literal(1), z.undefined()]).transform(() => 1 as const),
+  exportedAt: requiredStringSchema,
   baby: babySchema,
   records: z.object({
-    feedings: z.array(feedingRecordSchema),
-    sleeps: z.array(sleepRecordSchema),
-    diapers: z.array(diaperRecordSchema),
-    growth: z.array(growthRecordSchema),
-    milestones: z.array(milestoneRecordSchema),
+    feedings: z.array(feedingRecordSchema).default([]),
+    sleeps: z.array(sleepRecordSchema).default([]),
+    diapers: z.array(diaperRecordSchema).default([]),
+    growth: z.array(growthRecordSchema).default([]),
+    milestones: z.array(milestoneRecordSchema).default([]),
     vaccines: z.array(vaccineRecordSchema).default([]),
     appointments: z.array(appointmentRecordSchema).default([]),
   }),
-  settings: appSettingsSchema,
+  settings: appSettingsSchema.partial().default({}).transform((settings) =>
+    appSettingsSchema.parse(settings)
+  ),
 });
