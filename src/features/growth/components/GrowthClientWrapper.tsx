@@ -11,7 +11,7 @@ import { GrowthEmptyState } from "./GrowthEmptyState";
 import { GrowthDetailHeader } from "./GrowthDetailHeader";
 import { GrowthRegistrySheet } from "@/features/dashboard/components/GrowthRegistrySheet";
 import { ConfirmModal } from "@/components/ui";
-import { deleteGrowth } from "@/lib/db/repositories/growth";
+import { deleteGrowth } from "@/lib/sync/repositories/growth";
 
 export function GrowthClientWrapper() {
   const {

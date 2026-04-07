@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useBaby } from "@/contexts/BabyContext";
-import { getAppointmentsByBabyId } from "@/lib/db/repositories/appointment";
+import { getAppointmentsByBabyId } from "@/lib/sync/repositories/appointment";
+import { subscribeToDataSync } from "@/lib/sync/events";
 import type { PediatricAppointment } from "@/lib/db/types";
 import type { AppointmentListItem, AppointmentSummary } from "../types";
 import { withDisplayStatus } from "../utils";
@@ -27,6 +28,8 @@ export function useAppointments(): UseAppointmentsReturn {
   const refresh = useCallback(() => {
     setRefreshKey((prev) => prev + 1);
   }, []);
+
+  useEffect(() => subscribeToDataSync(refresh), [refresh]);
 
   useEffect(() => {
     if (!baby) {

@@ -4,8 +4,8 @@ import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import { Eye, EyeOff, Check, AlertCircle, X } from "lucide-react";
 import { Sheet } from "@/components/ui/Sheet";
-import { changePassword } from "@/lib/auth/service";
 import { useAuthContext } from "@/contexts/AuthContext";
+import { createClient } from "@/lib/supabase/client";
 
 interface Requirement {
   label: string;
@@ -143,15 +143,30 @@ export function ChangePasswordSheet({ isOpen, onClose }: ChangePasswordSheetProp
 
     setIsSaving(true);
     try {
-      const result = await changePassword(user.id, currentPassword, newPassword);
-      if ("success" in result && result.success) {
-        setSuccess(true);
-        setTimeout(() => {
-          handleClose();
-        }, 1500);
-      } else if ("message" in result) {
-        setError(result.message);
+      const supabase = createClient();
+
+      // Verify current password first
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: user.email,
+        password: currentPassword,
+      });
+
+      if (signInError) {
+        setError("Senha atual incorreta");
+        return;
       }
+
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+
+      if (error) {
+        setError("Erro ao alterar senha. Tente novamente.");
+        return;
+      }
+
+      setSuccess(true);
+      setTimeout(() => {
+        handleClose();
+      }, 1500);
     } catch {
       setError("Erro ao alterar senha. Tente novamente.");
     } finally {

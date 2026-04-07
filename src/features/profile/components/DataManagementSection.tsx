@@ -1,9 +1,14 @@
 "use client";
 
+import { useState } from "react";
 import { motion } from "framer-motion";
-import { Download, Upload } from "lucide-react";
+import { Download, Upload, Cloud } from "lucide-react";
 import { ConfirmModal } from "@/components/ui";
 import { useDataManagement } from "../hooks/useDataManagement";
+import { useCloudMigration } from "../hooks/useCloudMigration";
+import { useAppSettings } from "../hooks/useAppSettings";
+import { CloudMigrationSheet } from "./CloudMigrationSheet";
+import { useBaby } from "@/contexts/BabyContext";
 import type { DataStats } from "../types";
 
 interface DataManagementSectionProps {
@@ -126,6 +131,11 @@ export function DataManagementSection({
     confirmImport,
   } = useDataManagement({ onImported });
 
+  const { baby } = useBaby();
+  const { settings } = useAppSettings();
+  const { progress, migrate, reset } = useCloudMigration(baby, settings);
+  const [isMigrationOpen, setIsMigrationOpen] = useState(false);
+
   const totalRecords =
     stats.totalFeedings +
     stats.totalSleeps +
@@ -178,15 +188,15 @@ export function DataManagementSection({
           isLoading={isImportBusy}
         />
 
-        {false && (
-          <ActionCard
-            icon={<Upload className="w-5 h-5" strokeWidth={1.5} />}
-            title="Backup na Nuvem"
-          subtitle={`Último backup: ${stats.lastBackup}`}
+        <ActionCard
+          icon={<Cloud className="w-5 h-5" strokeWidth={1.5} />}
+          title="Backup na Nuvem"
+          subtitle="Enviar dados para o Supabase"
           color="#D2B59D"
-          badge="Ativo"
+          badge="Sync"
+          onClick={() => setIsMigrationOpen(true)}
+          disabled={isExporting || isImportBusy}
         />
-        )}
       </div>
 
       {feedback && (
@@ -271,6 +281,14 @@ export function DataManagementSection({
         cancelLabel="Cancelar"
         variant="primary"
         isLoading={isImporting}
+      />
+
+      <CloudMigrationSheet
+        isOpen={isMigrationOpen}
+        onClose={() => setIsMigrationOpen(false)}
+        progress={progress}
+        onMigrate={migrate}
+        onReset={reset}
       />
     </>
   );

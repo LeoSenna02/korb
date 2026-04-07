@@ -10,7 +10,7 @@ import React,
     useState,
   } from "react";
 import { useBaby } from "./BabyContext";
-import { saveSleep } from "@/lib/db/repositories";
+import { saveSleep } from "@/lib/sync/repositories/sleep";
 import type { SleepType } from "@/lib/db/types";
 
 interface SleepContextValue {

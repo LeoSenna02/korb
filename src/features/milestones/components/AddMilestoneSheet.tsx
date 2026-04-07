@@ -12,7 +12,7 @@ import {
   type MilestoneTemplate,
 } from "../constants";
 import type { MilestoneRecord } from "../types";
-import { saveMilestone, updateMilestone, deleteMilestone } from "@/lib/db/repositories/milestone";
+import { saveMilestone, updateMilestone, deleteMilestone } from "@/lib/sync/repositories/milestone";
 
 interface AddMilestoneSheetProps {
   isOpen: boolean;

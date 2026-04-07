@@ -1,7 +1,7 @@
 import { openDB, type IDBPDatabase } from "idb";
 
 const DB_NAME = "korb-db";
-const DB_VERSION = 7;
+const DB_VERSION = 8;
 
 let dbPromise: Promise<IDBPDatabase> | null = null;
 
@@ -97,6 +97,13 @@ export function getDB(): Promise<IDBPDatabase> {
           s.createIndex("byScheduledAt", "scheduledAt");
           s.createIndex("byBabyIdAndScheduledAt", ["babyId", "scheduledAt"]);
           s.createIndex("byBabyIdAndStatus", ["babyId", "status"]);
+        }
+
+        // v8: sync queue for offline-first write-through to Supabase
+        if (!db.objectStoreNames.contains("sync_queue")) {
+          const sq = db.createObjectStore("sync_queue", { keyPath: "queueId" });
+          sq.createIndex("byStore", "store");
+          sq.createIndex("byCreatedAt", "createdAt");
         }
       },
     });

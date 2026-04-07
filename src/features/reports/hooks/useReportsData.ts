@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useBaby } from "@/contexts/BabyContext";
-import { getReportFeedings, getReportSleeps, getReportDiapers, getReportGrowth } from "@/lib/db/repositories/reports";
+import { getReportFeedings, getReportSleeps, getReportDiapers, getReportGrowth } from "@/lib/sync/repositories";
+import { subscribeToDataSync } from "@/lib/sync/events";
 import {
   buildReportSummary,
   buildFeedingByHour,
@@ -12,7 +13,7 @@ import {
   buildTrendComparisons,
   buildMilestones,
   buildInsights,
-} from "@/lib/db/repositories/report-aggregations";
+} from "@/lib/sync/repositories";
 import type {
   ReportPeriod,
   ReportSummary,
@@ -121,6 +122,8 @@ export function useReportsData(
   const refresh = useCallback(() => {
     setRefreshKey((k) => k + 1);
   }, []);
+
+  useEffect(() => subscribeToDataSync(refresh), [refresh]);
 
   useEffect(() => {
     if (!baby) {

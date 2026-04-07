@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/Input";
 import { DateInput } from "@/components/ui/DateInput";
 import { NotesInput } from "./NotesInput";
 import { useBaby } from "@/contexts/BabyContext";
-import { saveGrowth, updateGrowth } from "@/lib/db/repositories/growth";
+import { saveGrowth, updateGrowth } from "@/lib/sync/repositories/growth";
 import {
   convertDateInputToMeasuredAt,
   convertMeasuredAtToDateInputValue,

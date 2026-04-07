@@ -5,7 +5,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Droplet, Baby, Ruler, Stethoscope } from "lucide-react";
 import Link from "next/link";
 import { useBaby } from "@/contexts/BabyContext";
-import { getRecentActivities } from "@/lib/db/repositories/activity";
+import { getRecentActivities } from "@/lib/sync/repositories";
+import { subscribeToDataSync } from "@/lib/sync/events";
 import type { ActivityRecord } from "@/lib/db/types";
 import { timeAgo } from "@/lib/utils/format";
 
@@ -181,6 +182,10 @@ export function RecentActivities({ refreshKey }: RecentActivitiesProps) {
   useEffect(() => {
     loadActivities();
   }, [loadActivities, refreshKey]);
+
+  useEffect(() => subscribeToDataSync(() => {
+    void loadActivities();
+  }), [loadActivities]);
 
   useEffect(() => {
     const interval = setInterval(() => {

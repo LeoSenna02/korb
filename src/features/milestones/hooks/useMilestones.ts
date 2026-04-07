@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useBaby } from "@/contexts/BabyContext";
-import { getMilestonesByBabyId } from "@/lib/db/repositories/milestone";
+import { getMilestonesByBabyId } from "@/lib/sync/repositories/milestone";
+import { subscribeToDataSync } from "@/lib/sync/events";
 import type { MilestoneRecord } from "../types";
 
 interface UseMilestonesReturn {
@@ -20,6 +21,8 @@ export function useMilestones(): UseMilestonesReturn {
   const refresh = useCallback(() => {
     setRefreshKey((k) => k + 1);
   }, []);
+
+  useEffect(() => subscribeToDataSync(refresh), [refresh]);
 
   useEffect(() => {
     if (!baby) {

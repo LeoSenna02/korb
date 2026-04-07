@@ -8,7 +8,7 @@ import { useAuth } from "@/lib/auth/hooks";
 import {
   deleteAppointment,
   saveAppointment,
-} from "@/lib/db/repositories/appointment";
+} from "@/lib/sync/repositories/appointment";
 import { formatDate } from "@/lib/utils/format";
 import { useAppSettings } from "@/features/profile/hooks/useAppSettings";
 import type {

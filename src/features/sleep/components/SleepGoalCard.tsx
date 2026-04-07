@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useBaby } from "@/contexts/BabyContext";
 import { useSleep } from "@/contexts/SleepContext";
-import { getTotalSleepSecondsToday } from "@/lib/db/repositories";
+import { getTotalSleepSecondsToday } from "@/lib/sync/repositories/sleep";
+import { subscribeToDataSync } from "@/lib/sync/events";
 
 const GOAL_SECONDS = 14 * 3600;
 
@@ -19,7 +20,7 @@ export function SleepGoalCard() {
   const [totalSeconds, setTotalSeconds] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchTotal = async () => {
+  const fetchTotal = useCallback(async () => {
     if (!baby) return;
     setIsLoading(true);
     try {
@@ -28,12 +29,19 @@ export function SleepGoalCard() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [baby]);
 
   useEffect(() => {
-    fetchTotal();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [baby, isActive]);
+    void fetchTotal();
+  }, [fetchTotal, isActive]);
+
+  useEffect(
+    () =>
+      subscribeToDataSync(() => {
+        void fetchTotal();
+      }),
+    [fetchTotal]
+  );
 
   const progress = Math.min(totalSeconds / GOAL_SECONDS, 1);
   const progressPercent = Math.round(progress * 100);

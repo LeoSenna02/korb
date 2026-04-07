@@ -2,7 +2,9 @@ import type { Metadata, Viewport } from "next";
 import { DM_Sans, DM_Mono } from "next/font/google";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { BabyProvider } from "@/contexts/BabyContext";
+import { BabySelectionProvider } from "@/contexts/BabySelectionContext";
 import { SleepProvider } from "@/contexts/SleepContext";
+import { SyncEngineProvider } from "@/components/providers/SyncEngineProvider";
 import { PWARegistrar } from "@/components/pwa/PWARegistrar";
 import "./globals.css";
 
@@ -69,13 +71,17 @@ export default function RootLayout({
     >
       <body className="antialiased">
         <PWARegistrar />
-        <AuthProvider>
-          <BabyProvider>
-            <SleepProvider>
-              {children}
-            </SleepProvider>
-          </BabyProvider>
-        </AuthProvider>
+        <SyncEngineProvider>
+          <AuthProvider>
+            <BabySelectionProvider>
+              <BabyProvider>
+                <SleepProvider>
+                  {children}
+                </SleepProvider>
+              </BabyProvider>
+            </BabySelectionProvider>
+          </AuthProvider>
+        </SyncEngineProvider>
       </body>
     </html>
   );

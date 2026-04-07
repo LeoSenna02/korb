@@ -10,7 +10,7 @@ import { ConsistencySlider } from "./ConsistencySlider";
 import { ColorPicker } from "./ColorPicker";
 import { NotesInput } from "./NotesInput";
 import { useBaby } from "@/contexts/BabyContext";
-import { saveDiaper } from "@/lib/db/repositories/diaper";
+import { saveDiaper } from "@/lib/sync/repositories/diaper";
 
 interface DiaperRegistrySheetProps {
   isOpen: boolean;

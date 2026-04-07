@@ -4,8 +4,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   getAppointmentLinkSuggestions,
   markAppointmentAsAttended,
-} from "@/lib/db/repositories/appointment";
-import { getGrowthById } from "@/lib/db/repositories/growth";
+} from "@/lib/sync/repositories/appointment";
+import { getGrowthById } from "@/lib/sync/repositories/growth";
 import {
   formatWeightKgForInput,
   parseDecimalInput,

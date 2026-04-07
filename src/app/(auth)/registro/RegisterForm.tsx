@@ -4,12 +4,8 @@ import { useState, useTransition, useCallback } from "react";
 import { Eye, EyeOff, Check } from "lucide-react";
 import { useAuth } from "@/lib/auth/hooks";
 import { registerSchema, formatZodError } from "@/lib/auth/validation";
-import type { AuthError, AuthOutcome } from "@/lib/auth/types";
+import type { AuthError } from "@/lib/auth/types";
 import type { RegisterInput } from "@/lib/auth/validation";
-
-function isAuthError(result: AuthOutcome): result is AuthError {
-  return !("success" in result);
-}
 
 function PasswordStrength({ password }: { password: string }) {
   const rules = [
@@ -101,7 +97,7 @@ export function RegisterForm() {
 
       startTransition(async () => {
         const result = await register(input);
-        if (isAuthError(result)) {
+        if ("code" in result) {
           setAuthError(result.message);
         }
       });

@@ -4,13 +4,9 @@ import { useState, useTransition, useCallback } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/lib/auth/hooks";
 import { loginSchema, formatZodError } from "@/lib/auth/validation";
-import type { AuthError, AuthOutcome } from "@/lib/auth/types";
+import type { AuthError } from "@/lib/auth/types";
 import type { LoginInput } from "@/lib/auth/validation";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
-
-function isAuthError(result: AuthOutcome): result is AuthError {
-  return !("success" in result);
-}
 
 export function LoginForm() {
   const { login } = useAuth();
@@ -53,9 +49,12 @@ export function LoginForm() {
 
       startTransition(async () => {
         const result = await login(input);
-        if (isAuthError(result)) {
+        if ("code" in result) {
           setAuthError(result.message);
         } else {
+          // Aguarda um tick para o AuthContext atualizar o estado
+          // e o BabyContext iniciar o carregamento dos bebês
+          await new Promise((resolve) => setTimeout(resolve, 100));
           setIsRedirecting(true);
         }
       });

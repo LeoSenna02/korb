@@ -11,7 +11,7 @@ import {
   CalendarHeart,
   TrendingUp,
 } from "lucide-react";
-import type { RecordCounts } from "@/lib/db/repositories/stats";
+import type { RecordCounts } from "@/lib/sync/repositories";
 import { calculateBabyAge, formatNumber } from "@/lib/utils/format";
 
 interface BabySummarySectionProps {

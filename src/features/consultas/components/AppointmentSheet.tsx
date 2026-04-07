@@ -8,7 +8,7 @@ import { Sheet } from "@/components/ui/Sheet";
 import {
   saveAppointment,
   updateAppointment,
-} from "@/lib/db/repositories/appointment";
+} from "@/lib/sync/repositories/appointment";
 import type { PediatricAppointment } from "../types";
 import {
   buildAppointmentFormValues,

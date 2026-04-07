@@ -5,8 +5,7 @@ import { motion } from "framer-motion";
 import { Check, AlertCircle } from "lucide-react";
 import { Sheet } from "@/components/ui/Sheet";
 import { useAuthContext } from "@/contexts/AuthContext";
-import { updateUserFields } from "@/lib/auth/storage";
-import { saveSessionUserData } from "@/lib/auth/storage";
+import { createClient } from "@/lib/supabase/client";
 
 interface EditProfileSheetProps {
   isOpen: boolean;
@@ -14,7 +13,7 @@ interface EditProfileSheetProps {
 }
 
 export function EditProfileSheet({ isOpen, onClose }: EditProfileSheetProps) {
-  const { user, session } = useAuthContext();
+  const { user } = useAuthContext();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [isSaving, setIsSaving] = useState(false);
@@ -61,13 +60,16 @@ export function EditProfileSheet({ isOpen, onClose }: EditProfileSheetProps) {
 
     setIsSaving(true);
     try {
-      const updated = await updateUserFields(user.id, {
-        name: trimmedName,
-        email: trimmedEmail,
+      const supabase = createClient();
+      const { error } = await supabase.auth.updateUser({
+        email: trimmedEmail !== user.email ? trimmedEmail : undefined,
+        data: { name: trimmedName },
       });
 
-      const { passwordHash: _, salt: __, ...publicUser } = updated;
-      saveSessionUserData(publicUser);
+      if (error) {
+        setError("Erro ao atualizar perfil. Tente novamente.");
+        return;
+      }
 
       setSuccess(true);
       setTimeout(() => {

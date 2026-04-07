@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useBaby } from "@/contexts/BabyContext";
-import { getGrowthByBabyId } from "@/lib/db/repositories/growth";
+import { getGrowthByBabyId } from "@/lib/sync/repositories/growth";
+import { subscribeToDataSync } from "@/lib/sync/events";
 import type { GrowthRecord } from "@/lib/db/types";
 import type {
   GrowthSummary,
@@ -18,6 +19,8 @@ export function useGrowthData() {
   const [refreshKey, setRefreshKey] = useState(0);
 
   const refresh = useCallback(() => setRefreshKey((k) => k + 1), []);
+
+  useEffect(() => subscribeToDataSync(refresh), [refresh]);
 
   useEffect(() => {
     if (!baby) {

@@ -9,7 +9,7 @@ import { useMilestones } from "../hooks/useMilestones";
 import { DEFAULT_MILESTONES, getMilestonesByCategory, type MilestoneCategory, type MilestoneTemplate } from "../constants";
 import type { MilestoneRecord } from "../types";
 import { useBaby } from "@/contexts/BabyContext";
-import { saveMilestone, updateMilestone } from "@/lib/db/repositories/milestone";
+import { saveMilestone, updateMilestone } from "@/lib/sync/repositories/milestone";
 
 function getLocalDateString(): string {
   const now = new Date();

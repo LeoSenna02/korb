@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useBaby } from "@/contexts/BabyContext";
-import { getAllActivitiesForHistory, getWeeklyStats } from "@/lib/db/repositories/history";
+import { getAllActivitiesForHistory, getWeeklyStats } from "@/lib/sync/repositories";
+import { subscribeToDataSync } from "@/lib/sync/events";
 import type { HistoryActivity, HistoryGroup, HistoryFilter, WeeklyStat } from "../types";
 
 function groupActivitiesByDate(activities: HistoryActivity[]): HistoryGroup[] {
@@ -90,6 +91,8 @@ export function useHistoryData(): UseHistoryDataReturn {
   const refresh = useCallback(() => {
     setRefreshKey((k) => k + 1);
   }, []);
+
+  useEffect(() => subscribeToDataSync(refresh), [refresh]);
 
   useEffect(() => {
     if (!baby) {

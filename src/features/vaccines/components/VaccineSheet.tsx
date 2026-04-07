@@ -10,7 +10,7 @@ import {
   deleteVaccine,
   saveVaccine,
   updateVaccine,
-} from "@/lib/db/repositories/vaccine";
+} from "@/lib/sync/repositories/vaccine";
 import { formatScheduledMonthLabel } from "../constants";
 import type { VaccineSheetMode, VaccineTimelineItem } from "../types";
 

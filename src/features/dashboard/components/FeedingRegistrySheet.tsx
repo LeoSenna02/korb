@@ -8,7 +8,7 @@ import { FeedingTypeSelector } from "./FeedingTypeSelector";
 import { DualTimer } from "./FeedingTimer";
 import { NotesInput } from "./NotesInput";
 import { useBaby } from "@/contexts/BabyContext";
-import { saveFeeding } from "@/lib/db/repositories/feeding";
+import { saveFeeding } from "@/lib/sync/repositories/feeding";
 import { useFeedingTimer } from "../hooks/useFeedingTimer";
 import { VolumeInput } from "./VolumeInput";
 import { TimerValue } from "./TimerValue";

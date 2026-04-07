@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useBaby } from "@/contexts/BabyContext";
 import { getAgeInCompletedMonths } from "@/lib/utils/format";
-import { getVaccinesByBabyId } from "@/lib/db/repositories/vaccine";
+import { getVaccinesByBabyId } from "@/lib/sync/repositories/vaccine";
+import { subscribeToDataSync } from "@/lib/sync/events";
 import { OFFICIAL_VACCINES, formatScheduledMonthLabel } from "../constants";
 import type {
   VaccineMonthGroup,
@@ -50,6 +51,8 @@ export function useVaccines(): UseVaccinesReturn {
   const refresh = useCallback(() => {
     setRefreshKey((prev) => prev + 1);
   }, []);
+
+  useEffect(() => subscribeToDataSync(refresh), [refresh]);
 
   useEffect(() => {
     if (!baby) {
