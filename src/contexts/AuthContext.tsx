@@ -5,6 +5,7 @@ import React, {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import { useRouter } from "next/navigation";
@@ -170,6 +171,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AppUser | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
+  const scheduledSyncRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user: u } }) => {
@@ -210,23 +212,92 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     };
 
+    const scheduleSyncFromServer = () => {
+      if (cancelled) {
+        return;
+      }
+
+      if (scheduledSyncRef.current) {
+        clearTimeout(scheduledSyncRef.current);
+      }
+
+      scheduledSyncRef.current = setTimeout(() => {
+        scheduledSyncRef.current = null;
+        void syncFromServer();
+      }, 250);
+    };
+
     const handleVisibilityChange = () => {
       if (document.visibilityState === "visible") {
-        void syncFromServer();
+        scheduleSyncFromServer();
       }
     };
 
-    void syncFromServer();
+    const realtimeChannel = supabase
+      .channel(`family-sync:${user.id}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "baby_caregivers" },
+        scheduleSyncFromServer
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "babies" },
+        scheduleSyncFromServer
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "feedings" },
+        scheduleSyncFromServer
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "diapers" },
+        scheduleSyncFromServer
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "growth" },
+        scheduleSyncFromServer
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "sleeps" },
+        scheduleSyncFromServer
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "appointments" },
+        scheduleSyncFromServer
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "milestones" },
+        scheduleSyncFromServer
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "vaccines" },
+        scheduleSyncFromServer
+      )
+      .subscribe();
 
-    window.addEventListener("focus", syncFromServer);
-    window.addEventListener("online", syncFromServer);
+    scheduleSyncFromServer();
+
+    window.addEventListener("focus", scheduleSyncFromServer);
+    window.addEventListener("online", scheduleSyncFromServer);
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
       cancelled = true;
-      window.removeEventListener("focus", syncFromServer);
-      window.removeEventListener("online", syncFromServer);
+      if (scheduledSyncRef.current) {
+        clearTimeout(scheduledSyncRef.current);
+        scheduledSyncRef.current = null;
+      }
+      window.removeEventListener("focus", scheduleSyncFromServer);
+      window.removeEventListener("online", scheduleSyncFromServer);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
+      void supabase.removeChannel(realtimeChannel);
     };
   }, [isHydrated, supabase, user]);
 
