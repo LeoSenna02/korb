@@ -5,6 +5,7 @@ import { useBaby } from "@/contexts/BabyContext";
 import { getAgeInCompletedMonths } from "@/lib/utils/format";
 import { getVaccinesByBabyId } from "@/lib/sync/repositories/vaccine";
 import { subscribeToDataSync } from "@/lib/sync/events";
+import { loadViewCache, readViewCache } from "@/lib/cache/view-cache";
 import { OFFICIAL_VACCINES, formatScheduledMonthLabel } from "../constants";
 import type {
   VaccineMonthGroup,
@@ -62,13 +63,22 @@ export function useVaccines(): UseVaccinesReturn {
     }
 
     const currentBabyId = baby.id;
+    const cacheKey = `vaccines:${currentBabyId}`;
+    const cached = readViewCache<VaccineRecord[]>(cacheKey);
     let cancelled = false;
 
-    async function loadVaccines() {
+    if (cached) {
+      setRecords(cached);
+      setIsLoading(false);
+    } else {
       setIsLoading(true);
+    }
 
+    async function loadVaccines() {
       try {
-        const result = await getVaccinesByBabyId(currentBabyId);
+        const result = await loadViewCache(cacheKey, () =>
+          getVaccinesByBabyId(currentBabyId)
+        );
         if (!cancelled) {
           setRecords(result);
         }

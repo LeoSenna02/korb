@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { useBaby } from "@/contexts/BabyContext";
 import { getHistoryPage, getWeeklyStats } from "@/lib/sync/repositories";
 import { subscribeToDataSync } from "@/lib/sync/events";
+import { loadViewCache, readViewCache } from "@/lib/cache/view-cache";
 import type { HistoryActivity, HistoryGroup, HistoryFilter, WeeklyStat } from "../types";
 
 const HISTORY_PAGE_SIZE = 40;
@@ -123,6 +124,21 @@ export function useHistoryData(): UseHistoryDataReturn {
     }
 
     let cancelled = false;
+    const cacheKey = `history:${baby.id}:page:${page}`;
+    const weeklyStatsCacheKey = `history-weekly-stats:${baby.id}`;
+    const cachedPage = readViewCache<{ activities: HistoryActivity[]; hasMore: boolean }>(cacheKey);
+    const cachedWeeklyStats = readViewCache<WeeklyStat[]>(weeklyStatsCacheKey);
+
+    if (cachedPage) {
+      setActivities(cachedPage.activities);
+      setHasMore(cachedPage.hasMore);
+      setIsLoading(false);
+      setHasResolvedOnce(true);
+    }
+
+    if (cachedWeeklyStats) {
+      setWeeklyStats(cachedWeeklyStats);
+    }
 
     async function loadData() {
       if (!baby) return;
@@ -138,8 +154,8 @@ export function useHistoryData(): UseHistoryDataReturn {
 
       try {
         const [pageResult, stats] = await Promise.all([
-          getHistoryPage(baby.id, HISTORY_PAGE_SIZE * page, 0),
-          getWeeklyStats(baby.id),
+          loadViewCache(cacheKey, () => getHistoryPage(baby.id, HISTORY_PAGE_SIZE * page, 0)),
+          loadViewCache(weeklyStatsCacheKey, () => getWeeklyStats(baby.id)),
         ]);
 
         if (!cancelled) {

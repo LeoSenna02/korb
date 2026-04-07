@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useBaby } from "@/contexts/BabyContext";
 import { getAppointmentsByBabyId } from "@/lib/sync/repositories/appointment";
 import { subscribeToDataSync } from "@/lib/sync/events";
+import { loadViewCache, readViewCache } from "@/lib/cache/view-cache";
 import type { PediatricAppointment } from "@/lib/db/types";
 import type { AppointmentListItem, AppointmentSummary } from "../types";
 import { withDisplayStatus } from "../utils";
@@ -39,13 +40,23 @@ export function useAppointments(): UseAppointmentsReturn {
     }
 
     const babyId = baby.id;
+    const cacheKey = `appointments:${babyId}`;
+    const cached = readViewCache<PediatricAppointment[]>(cacheKey);
     let cancelled = false;
 
-    async function loadAppointments() {
+    if (cached) {
+      setStoredAppointments(cached);
+      setIsLoading(false);
+      setNow(new Date());
+    } else {
       setIsLoading(true);
+    }
 
+    async function loadAppointments() {
       try {
-        const result = await getAppointmentsByBabyId(babyId);
+        const result = await loadViewCache(cacheKey, () =>
+          getAppointmentsByBabyId(babyId)
+        );
 
         if (!cancelled) {
           setStoredAppointments(result);

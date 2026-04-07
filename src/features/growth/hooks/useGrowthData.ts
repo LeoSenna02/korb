@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { useBaby } from "@/contexts/BabyContext";
 import { getGrowthByBabyId } from "@/lib/sync/repositories/growth";
 import { subscribeToDataSync } from "@/lib/sync/events";
+import { loadViewCache, readViewCache } from "@/lib/cache/view-cache";
 import type { GrowthRecord } from "@/lib/db/types";
 import type {
   GrowthSummary,
@@ -29,13 +30,23 @@ export function useGrowthData() {
       return;
     }
 
+    const cacheKey = `growth:${baby.id}`;
+    const cached = readViewCache<GrowthRecord[]>(cacheKey);
     let cancelled = false;
+
+    if (cached) {
+      setRecords(cached);
+      setIsLoading(false);
+    } else {
+      setIsLoading(true);
+    }
 
     async function load() {
       if (!baby) return;
-      setIsLoading(true);
       try {
-        const result = await getGrowthByBabyId(baby.id);
+        const result = await loadViewCache(cacheKey, () =>
+          getGrowthByBabyId(baby.id)
+        );
         if (!cancelled) {
           setRecords(result);
         }

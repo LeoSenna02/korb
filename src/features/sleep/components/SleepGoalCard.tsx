@@ -5,6 +5,7 @@ import { useBaby } from "@/contexts/BabyContext";
 import { useSleep } from "@/contexts/SleepContext";
 import { getTotalSleepSecondsToday } from "@/lib/sync/repositories/sleep";
 import { subscribeToDataSync } from "@/lib/sync/events";
+import { loadViewCache, readViewCache } from "@/lib/cache/view-cache";
 
 const GOAL_SECONDS = 14 * 3600;
 
@@ -22,9 +23,20 @@ export function SleepGoalCard() {
 
   const fetchTotal = useCallback(async () => {
     if (!baby) return;
-    setIsLoading(true);
+    const cacheKey = `sleep-total-today:${baby.id}`;
+    const cached = readViewCache<number>(cacheKey);
+
+    if (cached != null) {
+      setTotalSeconds(cached);
+      setIsLoading(false);
+    } else {
+      setIsLoading(true);
+    }
+
     try {
-      const total = await getTotalSleepSecondsToday(baby.id);
+      const total = await loadViewCache(cacheKey, () =>
+        getTotalSleepSecondsToday(baby.id)
+      );
       setTotalSeconds(total);
     } finally {
       setIsLoading(false);

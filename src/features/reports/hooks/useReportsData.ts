@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { useBaby } from "@/contexts/BabyContext";
 import { getReportFeedings, getReportSleeps, getReportDiapers, getReportGrowth } from "@/lib/sync/repositories";
 import { subscribeToDataSync } from "@/lib/sync/events";
+import { loadViewCache, readViewCache } from "@/lib/cache/view-cache";
 import {
   buildReportSummary,
   buildFeedingByHour,
@@ -59,6 +60,21 @@ const EMPTY_SUMMARY: ReportSummary = {
   diaperTrend: 0,
   weightTrend: 0,
 };
+
+interface ReportsCacheSnapshot {
+  summaries: ReportSummary;
+  summariesPrev: ReportSummary;
+  feedingByHour: FeedingHourBucket[];
+  sleepPeriods: SleepPeriod[];
+  diaperBreakdown: DiaperBreakdown;
+  growthSeries: GrowthDataPoint[];
+  trends: TrendComparison[];
+  milestones: Milestone[];
+  rawFeedings: FeedingRecord[];
+  rawSleeps: SleepRecord[];
+  rawDiapers: DiaperRecord[];
+  rawGrowth: GrowthRecord[];
+}
 
 function getPeriodDates(period: ReportPeriod): {
   start: Date;
@@ -136,71 +152,107 @@ export function useReportsData(
       return;
     }
 
+    const cacheKey = `reports:${baby.id}:${period}`;
+    const cached = readViewCache<ReportsCacheSnapshot>(cacheKey);
     let cancelled = false;
+
+    if (cached) {
+      setSummaries(cached.summaries);
+      setSummariesPrev(cached.summariesPrev);
+      setFeedingByHour(cached.feedingByHour);
+      setSleepPeriods(cached.sleepPeriods);
+      setDiaperBreakdown(cached.diaperBreakdown);
+      setGrowthSeries(cached.growthSeries);
+      setTrends(cached.trends);
+      setMilestones(cached.milestones);
+      setRawFeedings(cached.rawFeedings);
+      setRawSleeps(cached.rawSleeps);
+      setRawDiapers(cached.rawDiapers);
+      setRawGrowth(cached.rawGrowth);
+      setIsLoading(false);
+      setHasResolvedOnce(true);
+    }
 
     async function loadData() {
       if (!baby) return;
 
-      if (hasResolvedOnce) {
+      if (hasResolvedOnce || cached) {
         setIsRefreshing(true);
       } else {
         setIsLoading(true);
       }
 
-      if (!hasResolvedOnce) {
+      if (!hasResolvedOnce && !cached) {
         setError(null);
       }
 
       try {
-        const { start, prevStart, end } = getPeriodDates(period);
+        const snapshot = await loadViewCache(cacheKey, async () => {
+          const { start, prevStart, end } = getPeriodDates(period);
 
-        const [feedings, sleeps, diapers, allGrowth, prevFeedings, prevSleeps, prevDiapers] =
-          await Promise.all([
-            getReportFeedings(baby.id, start, end),
-            getReportSleeps(baby.id, start, end),
-            getReportDiapers(baby.id, start, end),
-            getReportGrowth(baby.id),
-            getReportFeedings(baby.id, prevStart, start),
-            getReportSleeps(baby.id, prevStart, start),
-            getReportDiapers(baby.id, prevStart, start),
-          ]);
+          const [feedings, sleeps, diapers, allGrowth, prevFeedings, prevSleeps, prevDiapers] =
+            await Promise.all([
+              getReportFeedings(baby.id, start, end),
+              getReportSleeps(baby.id, start, end),
+              getReportDiapers(baby.id, start, end),
+              getReportGrowth(baby.id),
+              getReportFeedings(baby.id, prevStart, start),
+              getReportSleeps(baby.id, prevStart, start),
+              getReportDiapers(baby.id, prevStart, start),
+            ]);
+
+          const growthInPeriod = allGrowth.filter(
+            (g) => new Date(g.measuredAt).getTime() >= start.getTime()
+          );
+          const prevGrowth = allGrowth.filter(
+            (g) => new Date(g.measuredAt).getTime() >= prevStart.getTime() &&
+                   new Date(g.measuredAt).getTime() < start.getTime()
+          );
+
+          const summary = buildReportSummary(
+            feedings, sleeps, diapers, growthInPeriod,
+            prevFeedings, prevSleeps, prevDiapers, prevGrowth
+          );
+          const summaryPrev = buildReportSummary(
+            prevFeedings, prevSleeps, prevDiapers, prevGrowth,
+            [], [], [], []
+          );
+
+          return {
+            summaries: summary,
+            summariesPrev: summaryPrev,
+            feedingByHour: buildFeedingByHour(feedings),
+            sleepPeriods: buildSleepPeriods(sleeps),
+            diaperBreakdown: buildDiaperBreakdown(diapers),
+            growthSeries: buildGrowthSeries(allGrowth),
+            trends: buildTrendComparisons(summary, summaryPrev),
+            milestones: buildMilestones(allGrowth, sleeps, feedings),
+            rawFeedings: feedings,
+            rawSleeps: sleeps,
+            rawDiapers: diapers,
+            rawGrowth: allGrowth,
+          } satisfies ReportsCacheSnapshot;
+        });
 
         if (cancelled) return;
 
-        const growthInPeriod = allGrowth.filter(
-          (g) => new Date(g.measuredAt).getTime() >= start.getTime()
-        );
-        const prevGrowth = allGrowth.filter(
-          (g) => new Date(g.measuredAt).getTime() >= prevStart.getTime() &&
-                 new Date(g.measuredAt).getTime() < start.getTime()
-        );
-
-        const summary = buildReportSummary(
-          feedings, sleeps, diapers, growthInPeriod,
-          prevFeedings, prevSleeps, prevDiapers, prevGrowth
-        );
-        const summaryPrev = buildReportSummary(
-          prevFeedings, prevSleeps, prevDiapers, prevGrowth,
-          [], [], [], []
-        );
-
-        setSummaries(summary);
-        setSummariesPrev(summaryPrev);
-        setFeedingByHour(buildFeedingByHour(feedings));
-        setSleepPeriods(buildSleepPeriods(sleeps));
-        setDiaperBreakdown(buildDiaperBreakdown(diapers));
-        setGrowthSeries(buildGrowthSeries(allGrowth));
-        setTrends(buildTrendComparisons(summary, summaryPrev));
-        setMilestones(buildMilestones(allGrowth, sleeps, feedings));
-        setRawFeedings(feedings);
-        setRawSleeps(sleeps);
-        setRawDiapers(diapers);
-        setRawGrowth(allGrowth);
+        setSummaries(snapshot.summaries);
+        setSummariesPrev(snapshot.summariesPrev);
+        setFeedingByHour(snapshot.feedingByHour);
+        setSleepPeriods(snapshot.sleepPeriods);
+        setDiaperBreakdown(snapshot.diaperBreakdown);
+        setGrowthSeries(snapshot.growthSeries);
+        setTrends(snapshot.trends);
+        setMilestones(snapshot.milestones);
+        setRawFeedings(snapshot.rawFeedings);
+        setRawSleeps(snapshot.rawSleeps);
+        setRawDiapers(snapshot.rawDiapers);
+        setRawGrowth(snapshot.rawGrowth);
         setError(null);
       } catch (err) {
         if (!cancelled) {
           console.error("[useReportsData] Failed to load:", err);
-          if (!hasResolvedOnce) {
+          if (!hasResolvedOnce && !cached) {
             setError("Erro ao carregar dados");
           }
         }

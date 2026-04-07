@@ -5,6 +5,8 @@ import { useBaby } from "@/contexts/BabyContext";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { parseDateLocal } from "@/lib/utils/format";
 import { getRecordCounts } from "@/lib/sync/repositories";
+import { subscribeToDataSync } from "@/lib/sync/events";
+import { loadViewCache, readViewCache } from "@/lib/cache/view-cache";
 import type { RecordCounts } from "@/lib/sync/repositories";
 import type { BabyProfile } from "../types";
 import type { Baby } from "@/lib/db/types";
@@ -58,6 +60,8 @@ export function useProfileData(): UseProfileDataReturn {
     setRefreshKey((k) => k + 1);
   }, []);
 
+  useEffect(() => subscribeToDataSync(refresh), [refresh]);
+
   useEffect(() => {
     if (!baby) {
       setCounts({
@@ -72,18 +76,30 @@ export function useProfileData(): UseProfileDataReturn {
       return;
     }
 
+    const cacheKey = `profile-counts:${baby.id}`;
+    const cached = readViewCache<RecordCounts>(cacheKey);
     let cancelled = false;
+
+    if (cached) {
+      setCounts(cached);
+      setIsLoading(false);
+    } else {
+      setIsLoading(true);
+    }
 
     async function loadStats() {
       if (!baby) return;
-
-      setIsLoading(true);
-      setError(null);
+      if (!cached) {
+        setError(null);
+      }
 
       try {
-        const result = await getRecordCounts(baby.id);
+        const result = await loadViewCache(cacheKey, () =>
+          getRecordCounts(baby.id)
+        );
         if (!cancelled) {
           setCounts(result);
+          setError(null);
         }
       } catch (err) {
         if (!cancelled) {

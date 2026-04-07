@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useBaby } from "@/contexts/BabyContext";
 import { getRecentActivities } from "@/lib/sync/repositories";
 import { subscribeToDataSync } from "@/lib/sync/events";
+import { loadViewCache, readViewCache } from "@/lib/cache/view-cache";
 import type { ActivityRecord } from "@/lib/db/types";
 import { timeAgo } from "@/lib/utils/format";
 
@@ -164,8 +165,19 @@ export function RecentActivities({ refreshKey }: RecentActivitiesProps) {
       return;
     }
 
+    const cacheKey = `recent-activities:${baby.id}`;
+    const cached = readViewCache<ActivityRecord[]>(cacheKey);
+    if (cached) {
+      setActivities(cached.length === 0 ? EMPTY_ACTIVITIES : cached.map(formatActivity));
+      setIsLoading(false);
+    } else {
+      setIsLoading(true);
+    }
+
     try {
-      const records = await getRecentActivities(baby.id, 5);
+      const records = await loadViewCache(cacheKey, () =>
+        getRecentActivities(baby.id, 5)
+      );
       if (records.length === 0) {
         setActivities(EMPTY_ACTIVITIES);
       } else {

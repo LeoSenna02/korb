@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useBaby } from "@/contexts/BabyContext";
 import { getMilestonesByBabyId } from "@/lib/sync/repositories/milestone";
 import { subscribeToDataSync } from "@/lib/sync/events";
+import { loadViewCache, readViewCache } from "@/lib/cache/view-cache";
 import type { MilestoneRecord } from "../types";
 
 interface UseMilestonesReturn {
@@ -31,13 +32,23 @@ export function useMilestones(): UseMilestonesReturn {
       return;
     }
 
+    const cacheKey = `milestones:${baby.id}`;
+    const cached = readViewCache<MilestoneRecord[]>(cacheKey);
     let cancelled = false;
+
+    if (cached) {
+      setRecords(cached);
+      setIsLoading(false);
+    } else {
+      setIsLoading(true);
+    }
 
     async function loadMilestones() {
       if (!baby) return;
-      setIsLoading(true);
       try {
-        const data = await getMilestonesByBabyId(baby.id);
+        const data = await loadViewCache(cacheKey, () =>
+          getMilestonesByBabyId(baby.id)
+        );
         if (!cancelled) {
           setRecords(data);
         }
