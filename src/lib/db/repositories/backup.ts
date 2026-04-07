@@ -12,6 +12,18 @@ import { getSleepsByBabyId } from "./sleep";
 import { getVaccinesByBabyId } from "./vaccine";
 import { getAppointmentsByBabyId } from "./appointment";
 import { emitDataSyncEvent } from "@/lib/sync/events";
+import { clearQueuedEntries } from "@/lib/sync/queue";
+import type { StoreName } from "@/lib/sync/types";
+
+const RESETTABLE_STORES = [
+  "feedings",
+  "diapers",
+  "growth",
+  "sleeps",
+  "milestones",
+  "vaccines",
+  "appointments",
+] as const satisfies readonly StoreName[];
 
 function mapBabyToBackupProfile(baby: Baby): BabyBackupPayload["baby"] {
   return {
@@ -208,5 +220,28 @@ export async function replaceBabyDataFromBackup(
   }
 
   await tx.done;
+  emitDataSyncEvent();
+}
+
+export async function clearBabyData(currentBaby: Baby): Promise<void> {
+  const db = await getDB();
+  const tx = db.transaction(RESETTABLE_STORES, "readwrite");
+  const queuedEntriesToClear: Array<{ store: StoreName; recordId: string }> = [];
+
+  for (const storeName of RESETTABLE_STORES) {
+    const store = tx.objectStore(storeName);
+    const recordKeys = await store.index("byBabyId").getAllKeys(currentBaby.id);
+
+    for (const key of recordKeys) {
+      await store.delete(key);
+      queuedEntriesToClear.push({
+        store: storeName,
+        recordId: String(key),
+      });
+    }
+  }
+
+  await tx.done;
+  await clearQueuedEntries(queuedEntriesToClear);
   emitDataSyncEvent();
 }

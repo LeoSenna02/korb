@@ -56,4 +56,8 @@ export {
 } from "./report-aggregations";
 export { getRecordCounts } from "./stats";
 export type { RecordCounts } from "./stats";
-export { createBabyBackupSnapshot, replaceBabyDataFromBackup } from "./backup";
+export {
+  createBabyBackupSnapshot,
+  replaceBabyDataFromBackup,
+  clearBabyData,
+} from "./backup";

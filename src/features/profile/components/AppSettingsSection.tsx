@@ -6,6 +6,7 @@ import { ChevronRight } from "lucide-react";
 import { Sheet } from "@/components/ui/Sheet";
 import { useBaby } from "@/contexts/BabyContext";
 import { useAuthContext } from "@/contexts/AuthContext";
+import { useBabySelection } from "@/contexts/BabySelectionContext";
 import { useAppSettings } from "../hooks/useAppSettings";
 import { FamilyMembershipSection } from "./FamilyMembershipSection";
 import { InviteCodeSection } from "./InviteCodeSection";
@@ -187,8 +188,10 @@ function CustomSelector({ label, value, options, onChange }: CustomSelectorProps
 
 export function AppSettingsSection() {
   const { settings, updateSetting, isHydrated } = useAppSettings();
-  const { baby } = useBaby();
+  const { babies, baby, refreshBabies } = useBaby();
   const { user } = useAuthContext();
+  const { setSelectedBabyId } = useBabySelection();
+  const [isBabySwitcherOpen, setIsBabySwitcherOpen] = useState(false);
 
   if (!isHydrated) {
     return (
@@ -226,12 +229,76 @@ export function AppSettingsSection() {
         />
       )}
 
+      {babies.length > 1 && (
+        <>
+          <motion.div variants={item} className="mb-8">
+            <button
+              type="button"
+              onClick={() => setIsBabySwitcherOpen(true)}
+              className="w-full bg-surface-container-low rounded-2xl border border-surface-variant/20 px-5 py-4 flex items-center justify-between text-left"
+            >
+              <div>
+                <span className="font-display text-sm font-medium text-text-primary block">
+                  Trocar bebe
+                </span>
+                <span className="font-data text-[11px] text-text-secondary mt-0.5 block">
+                  Escolha qual familia voce quer acompanhar agora
+                </span>
+              </div>
+              <ChevronRight className="w-4 h-4 text-text-disabled shrink-0" />
+            </button>
+          </motion.div>
+
+          <Sheet
+            isOpen={isBabySwitcherOpen}
+            onClose={() => setIsBabySwitcherOpen(false)}
+            title="Trocar bebe"
+            subtitle="Selecione a familia que voce quer ver agora"
+          >
+            <div className="flex flex-col gap-2 pb-4">
+              {babies.map((listedBaby) => {
+                const isSelected = listedBaby.id === baby?.id;
+
+                return (
+                  <button
+                    key={listedBaby.id}
+                    type="button"
+                    onClick={() => {
+                      setSelectedBabyId(listedBaby.id);
+                      setIsBabySwitcherOpen(false);
+                    }}
+                    className={`w-full rounded-2xl border px-4 py-4 text-left transition-colors ${
+                      isSelected
+                        ? "border-primary/30 bg-primary/10"
+                        : "border-surface-variant/20 bg-surface-container-low"
+                    }`}
+                  >
+                    <span className="font-display text-sm font-medium text-text-primary block">
+                      {listedBaby.name}
+                    </span>
+                    <span className="font-data text-[11px] text-text-secondary mt-1 block">
+                      Familia {listedBaby.familyName}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </Sheet>
+        </>
+      )}
+
       {baby && user && (
         <InviteCodeSection babyId={baby.id} userId={user.id} />
       )}
 
       {user && (
-        <JoinFamilySection userId={user.id} />
+        <JoinFamilySection
+          userId={user.id}
+          onSuccess={async (babyId) => {
+            await refreshBabies();
+            setSelectedBabyId(babyId);
+          }}
+        />
       )}
 
       <motion.div

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, type ReactNode } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useModal } from "@/contexts/ModalContext";
 import { Button } from "./Button";
@@ -16,6 +16,8 @@ interface ConfirmModalProps {
   cancelLabel?: string;
   variant?: "danger" | "primary";
   isLoading?: boolean;
+  confirmDisabled?: boolean;
+  children?: ReactNode;
 }
 
 export function ConfirmModal({
@@ -28,6 +30,8 @@ export function ConfirmModal({
   cancelLabel = "Cancelar",
   variant = "danger",
   isLoading = false,
+  confirmDisabled = false,
+  children,
 }: ConfirmModalProps) {
   const { openModal } = useModal();
 
@@ -110,6 +114,8 @@ export function ConfirmModal({
                 >
                   {description}
                 </p>
+
+                {children && <div className="mt-5 text-left">{children}</div>}
               </div>
 
               <div className="px-6 pb-6 flex flex-col gap-2">
@@ -117,7 +123,7 @@ export function ConfirmModal({
                   variant={variant === "danger" ? "tertiary" : "primary"}
                   size="md"
                   onClick={onConfirm}
-                  disabled={isLoading}
+                  disabled={isLoading || confirmDisabled}
                 >
                   {isLoading ? (
                     <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />

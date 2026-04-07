@@ -14,11 +14,13 @@ import {
 import { babyRegistrationSchema, type BabyRegistrationInput } from "@/features/baby/schemas";
 import { useBaby } from "@/contexts/BabyContext";
 import { useAuthContext } from "@/contexts/AuthContext";
+import { useBabySelection } from "@/contexts/BabySelectionContext";
 import { JoinFamilySheet } from "@/features/baby/components/JoinFamilySheet";
 
 export function BabyRegistrationForm() {
   const { saveBaby, refreshBabies } = useBaby();
   const { user } = useAuthContext();
+  const { setSelectedBabyId } = useBabySelection();
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Partial<Record<keyof BabyRegistrationInput, string>>>({});
@@ -170,8 +172,9 @@ export function BabyRegistrationForm() {
           isOpen={isJoinSheetOpen}
           onClose={() => setIsJoinSheetOpen(false)}
           userId={user.id}
-          onSuccess={async () => {
+          onSuccess={async (babyId) => {
             await refreshBabies();
+            setSelectedBabyId(babyId);
             router.push("/dashboard");
           }}
         />

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Download, Upload, Cloud } from "lucide-react";
+import { ChevronRight, Download, Trash2, Upload, Cloud } from "lucide-react";
 import { ConfirmModal } from "@/components/ui";
 import { useDataManagement } from "../hooks/useDataManagement";
 import { useCloudMigration } from "../hooks/useCloudMigration";
@@ -93,19 +93,7 @@ function ActionCard({
         {isLoading ? (
           <span className="w-4 h-4 mt-1 border-2 border-text-disabled border-t-transparent rounded-full animate-spin" />
         ) : (
-          <svg
-            viewBox="0 0 16 16"
-            fill="none"
-            className="w-4 h-4 text-text-disabled mt-1 transition-transform duration-200 group-hover:translate-x-0.5"
-          >
-            <path
-              d="M6 4l4 4-4 4"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
+          <ChevronRight className="w-4 h-4 text-text-disabled mt-1 transition-transform duration-200 group-hover:translate-x-0.5" />
         )}
       </div>
     </motion.button>
@@ -119,16 +107,25 @@ export function DataManagementSection({
   const {
     fileInputRef,
     feedback,
+    canDeleteAllData,
+    isCheckingDeleteAccess,
     isExporting,
     isPreparingImport,
     isImporting,
+    isDeletingAllData,
     importPreview,
     isConfirmOpen,
+    isDeleteConfirmOpen,
+    deleteConfirmationValue,
     exportData,
     openImportPicker,
     handleFileChange,
     cancelImport,
     confirmImport,
+    openDeleteConfirm,
+    closeDeleteConfirm,
+    setDeleteConfirmationValue,
+    confirmDeleteAllData,
   } = useDataManagement({ onImported });
 
   const { baby } = useBaby();
@@ -214,7 +211,7 @@ export function DataManagementSection({
         </motion.div>
       )}
 
-      {/* Danger zone */}
+      {!isCheckingDeleteAccess && canDeleteAllData && (
       <motion.div variants={item} className="mt-6 pt-6 border-t border-surface-variant/10">
         <h4 className="font-data text-[10px] uppercase tracking-wider text-text-disabled mb-3">
           Zona de Perigo
@@ -223,23 +220,13 @@ export function DataManagementSection({
           variants={item}
           whileHover={{ scale: 1.01 }}
           whileTap={{ scale: 0.98 }}
-          className="w-full text-left group transition-all duration-200 border border-[#CD8282]/20 bg-[#CD8282]/5 rounded-2xl p-4 hover:border-[#CD8282]/40"
+          onClick={openDeleteConfirm}
+          disabled={isDeletingAllData}
+          className="w-full text-left group transition-all duration-200 border border-[#CD8282]/20 bg-[#CD8282]/5 rounded-2xl p-4 hover:border-[#CD8282]/40 disabled:opacity-60 disabled:cursor-not-allowed"
         >
           <div className="flex items-start gap-4">
             <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5 bg-[#CD8282]/10">
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                className="w-5 h-5 text-[#CD8282]"
-                stroke="currentColor"
-                strokeWidth={1.5}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"
-                />
-              </svg>
+              <Trash2 className="w-5 h-5 text-[#CD8282]" strokeWidth={1.5} />
             </div>
             <div className="flex-1 min-w-0">
               <span className="font-display text-sm font-semibold text-[#CD8282] block mb-0.5">
@@ -249,22 +236,15 @@ export function DataManagementSection({
                 Esta ação é irreversível
               </span>
             </div>
-            <svg
-              viewBox="0 0 16 16"
-              fill="none"
-              className="w-4 h-4 text-[#CD8282]/40 mt-1 transition-transform duration-200 group-hover:translate-x-0.5"
-            >
-              <path
-                d="M6 4l4 4-4 4"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
+            {isDeletingAllData ? (
+              <span className="w-4 h-4 mt-1 border-2 border-[#CD8282]/40 border-t-[#CD8282] rounded-full animate-spin" />
+            ) : (
+              <ChevronRight className="w-4 h-4 text-[#CD8282]/40 mt-1 transition-transform duration-200 group-hover:translate-x-0.5" />
+            )}
           </div>
         </motion.button>
       </motion.div>
+      )}
       </motion.div>
 
       <ConfirmModal
@@ -274,7 +254,7 @@ export function DataManagementSection({
         title="Substituir dados atuais?"
         description={
           importPreview
-            ? `O arquivo ${importPreview.fileName} contem ${importPreview.totalRecords} registros de ${importPreview.babyName}. Os dados atuais do bebe serao substituidos por este backup.`
+            ? `O arquivo ${importPreview.fileName} contém ${importPreview.totalRecords} registros de ${importPreview.babyName}. Os dados atuais do bebê serão substituídos por este backup.`
             : "Os dados atuais do bebe serao substituidos por este backup."
         }
         confirmLabel="Importar backup"
@@ -282,6 +262,39 @@ export function DataManagementSection({
         variant="primary"
         isLoading={isImporting}
       />
+
+      <ConfirmModal
+        isOpen={isDeleteConfirmOpen}
+        onClose={closeDeleteConfirm}
+        onConfirm={confirmDeleteAllData}
+        title="Apagar todos os registros?"
+        description="Essa acao vai limpar todos os registros deste bebe no aparelho e no Supabase. Para continuar, digite EXCLUIR."
+        confirmLabel="Apagar tudo"
+        cancelLabel="Cancelar"
+        variant="danger"
+        isLoading={isDeletingAllData}
+        confirmDisabled={deleteConfirmationValue.trim() !== "EXCLUIR"}
+      >
+        <div className="rounded-2xl border border-[#CD8282]/20 bg-[#CD8282]/5 p-4">
+          <label
+            htmlFor="delete-confirmation"
+            className="font-data text-[10px] uppercase tracking-[0.16em] text-[#CD8282] block mb-2"
+          >
+            Digite EXCLUIR
+          </label>
+          <input
+            id="delete-confirmation"
+            type="text"
+            value={deleteConfirmationValue}
+            onChange={(event) => setDeleteConfirmationValue(event.target.value)}
+            autoCapitalize="characters"
+            autoCorrect="off"
+            spellCheck={false}
+            className="w-full rounded-2xl border border-[#CD8282]/20 bg-surface-container-high px-4 py-3 font-data text-sm text-text-primary outline-none transition-colors focus:border-[#CD8282]/50"
+            placeholder="EXCLUIR"
+          />
+        </div>
+      </ConfirmModal>
 
       <CloudMigrationSheet
         isOpen={isMigrationOpen}

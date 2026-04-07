@@ -48,3 +48,24 @@ export async function clearQueue(store?: StoreName): Promise<void> {
     }
   }
 }
+
+export async function clearQueuedEntries(
+  entries: Array<Pick<SyncQueueEntry, "store" | "recordId">>
+): Promise<void> {
+  if (entries.length === 0) {
+    return;
+  }
+
+  const db = await getDB();
+  const pendingEntries = await db.getAll("sync_queue");
+  const entryKeys = new Set(
+    entries.map((entry) => `${entry.store}:${entry.recordId}`)
+  );
+
+  for (const pendingEntry of pendingEntries) {
+    const queueKey = `${pendingEntry.store}:${pendingEntry.recordId}`;
+    if (entryKeys.has(queueKey)) {
+      await db.delete("sync_queue", pendingEntry.queueId);
+    }
+  }
+}

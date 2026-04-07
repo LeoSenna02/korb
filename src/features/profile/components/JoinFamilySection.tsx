@@ -7,7 +7,7 @@ import { useJoinFamily, getErrorMessage } from "@/features/baby/hooks/useJoinFam
 
 interface JoinFamilySectionProps {
   userId: string;
-  onSuccess?: () => void;
+  onSuccess?: (babyId: string) => void;
 }
 
 const item = {
