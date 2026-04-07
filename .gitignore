@@ -40,7 +40,9 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-.agent/
+.agents/
 .claude/
 .kilocode/
 plans/
+supabase/
+.kilo/

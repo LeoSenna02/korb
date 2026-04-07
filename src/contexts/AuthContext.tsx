@@ -5,13 +5,15 @@ import React, {
   useCallback,
   useEffect,
   useMemo,
-  useRef,
   useState,
 } from "react";
 import { useRouter } from "next/navigation";
 import type { SupabaseClient, User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 import type { AuthError } from "@/lib/auth/types";
+import type { LoginInput, RegisterInput } from "@/lib/auth/validation";
+import { loginAction, registerAction } from "@/lib/auth/actions";
+import { useRealtimeSync } from "@/lib/sync/useRealtimeSync";
 import { getBabiesByUserId } from "@/lib/sync/repositories/baby";
 import { getDB } from "@/lib/db";
 import type { Baby } from "@/lib/db/types";
@@ -34,25 +36,6 @@ function adaptUser(u: User | null): AppUser | null {
     name: (u.user_metadata?.name as string | undefined) ?? "",
     createdAt: u.created_at,
   };
-}
-
-function mapSupabaseError(message: string): AuthError {
-  if (
-    message.includes("Invalid login credentials") ||
-    message.includes("invalid_credentials")
-  ) {
-    return { code: "INVALID_PASSWORD", message: "E-mail ou senha incorretos" };
-  }
-  if (
-    message.includes("User already registered") ||
-    message.includes("already_exists")
-  ) {
-    return {
-      code: "EMAIL_ALREADY_EXISTS",
-      message: "Este e-mail já está cadastrado",
-    };
-  }
-  return { code: "UNKNOWN_ERROR", message: "Erro inesperado. Tente novamente." };
 }
 
 // ─── Helper: verifica se usuário tem pelo menos um bebê cadastrado ────────────
@@ -134,17 +117,6 @@ async function checkUserHasBaby(
 
 // ─── Context types ────────────────────────────────────────────────────────────
 
-interface LoginInput {
-  email: string;
-  password: string;
-}
-
-interface RegisterInput {
-  name: string;
-  email: string;
-  password: string;
-}
-
 interface AuthResult {
   success: true;
   user: AppUser;
@@ -171,8 +143,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AppUser | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
-  const scheduledSyncRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Realtime sync (moved from AuthContext to useRealtimeSync hook)
+  useRealtimeSync(user?.id ?? null);
+
+  // Auth state hydration
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user: u } }) => {
       setUser(adaptUser(u));
@@ -188,138 +163,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => subscription.unsubscribe();
   }, [supabase]);
 
-  useEffect(() => {
-    if (!isHydrated || !user) {
-      return;
-    }
-
-    let cancelled = false;
-    let isSyncing = false;
-
-    const syncFromServer = async () => {
-      if (cancelled || isSyncing) {
-        return;
-      }
-
-      isSyncing = true;
-
-      try {
-        await pullAllDataFromServer(supabase, user.id);
-      } catch (error) {
-        console.warn("[AuthContext] Session pull failed:", error);
-      } finally {
-        isSyncing = false;
-      }
-    };
-
-    const scheduleSyncFromServer = () => {
-      if (cancelled) {
-        return;
-      }
-
-      if (scheduledSyncRef.current) {
-        clearTimeout(scheduledSyncRef.current);
-      }
-
-      scheduledSyncRef.current = setTimeout(() => {
-        scheduledSyncRef.current = null;
-        void syncFromServer();
-      }, 250);
-    };
-
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === "visible") {
-        scheduleSyncFromServer();
-      }
-    };
-
-    const realtimeChannel = supabase
-      .channel(`family-sync:${user.id}`)
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "baby_caregivers" },
-        scheduleSyncFromServer
-      )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "babies" },
-        scheduleSyncFromServer
-      )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "feedings" },
-        scheduleSyncFromServer
-      )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "diapers" },
-        scheduleSyncFromServer
-      )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "growth" },
-        scheduleSyncFromServer
-      )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "sleeps" },
-        scheduleSyncFromServer
-      )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "appointments" },
-        scheduleSyncFromServer
-      )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "milestones" },
-        scheduleSyncFromServer
-      )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "vaccines" },
-        scheduleSyncFromServer
-      )
-      .subscribe();
-
-    scheduleSyncFromServer();
-
-    window.addEventListener("focus", scheduleSyncFromServer);
-    window.addEventListener("online", scheduleSyncFromServer);
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-
-    return () => {
-      cancelled = true;
-      if (scheduledSyncRef.current) {
-        clearTimeout(scheduledSyncRef.current);
-        scheduledSyncRef.current = null;
-      }
-      window.removeEventListener("focus", scheduleSyncFromServer);
-      window.removeEventListener("online", scheduleSyncFromServer);
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-      void supabase.removeChannel(realtimeChannel);
-    };
-  }, [isHydrated, supabase, user]);
-
   // ─── Login ─────────────────────────────────────────────────────────────────
   const handleLogin = useCallback(
     async (input: LoginInput): Promise<AuthResult | AuthError> => {
       setIsLoading(true);
       try {
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email: input.email,
-          password: input.password,
-        });
+        // Server Action com validação Zod server-side
+        const result = await loginAction(input);
 
-        if (error) return mapSupabaseError(error.message);
+        if ("code" in result && result.code !== "UNKNOWN_ERROR") {
+          return result;
+        }
 
-        const adapted = adaptUser(data.user);
-        if (!adapted)
+        if ("code" in result) {
+          return result;
+        }
+
+        // Sucesso - atualizar sessão via Supabase client
+        const { data: { user: u } } = await supabase.auth.getUser();
+        if (!u) {
           return { code: "UNKNOWN_ERROR", message: "Erro ao obter dados do usuário" };
+        }
+
+        const adapted = adaptUser(u);
+        if (!adapted) {
+          return { code: "UNKNOWN_ERROR", message: "Erro ao obter dados do usuário" };
+        }
 
         setUser(adapted);
 
-        const hasBaby = await checkUserHasBaby(data.user.id, supabase);
+        const hasBaby = await checkUserHasBaby(u.id, supabase);
         if (hasBaby) {
           router.push("/dashboard");
         } else {
@@ -339,19 +212,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     async (input: RegisterInput): Promise<AuthResult | AuthError> => {
       setIsLoading(true);
       try {
-        const { data, error } = await supabase.auth.signUp({
-          email: input.email,
-          password: input.password,
-          options: { data: { name: input.name } },
-        });
+        // Server Action com validação Zod server-side
+        const result = await registerAction(input);
 
-        if (error) return mapSupabaseError(error.message);
-        if (!data.user)
+        if ("code" in result) {
+          return result;
+        }
+
+        // Sucesso - atualizar sessão via Supabase client
+        const { data: { user: u } } = await supabase.auth.getUser();
+        if (!u) {
           return { code: "UNKNOWN_ERROR", message: "Erro ao criar conta" };
+        }
 
-        const adapted = adaptUser(data.user);
-        if (!adapted)
+        const adapted = adaptUser(u);
+        if (!adapted) {
           return { code: "UNKNOWN_ERROR", message: "Erro ao obter dados do usuário" };
+        }
 
         setUser(adapted);
 
