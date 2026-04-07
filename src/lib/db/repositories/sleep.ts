@@ -24,6 +24,23 @@ export async function getSleepsByBabyId(babyId: string): Promise<SleepRecord[]> 
   return all.sort((a, b) => b.startedAt.localeCompare(a.startedAt));
 }
 
+export async function getRecentSleeps(
+  babyId: string,
+  limit: number
+): Promise<SleepRecord[]> {
+  const db = await getDB();
+  const tx = db.transaction("sleeps");
+  const index = tx.store.index("byBabyIdAndStarted");
+  const range = IDBKeyRange.bound([babyId, ""], [babyId, "\uffff"]);
+  const results: SleepRecord[] = [];
+  let cursor = await index.openCursor(range, "prev");
+  while (cursor && results.length < limit) {
+    results.push(cursor.value);
+    cursor = await cursor.continue();
+  }
+  return results;
+}
+
 export async function getTodaySleepRecords(babyId: string): Promise<SleepRecord[]> {
   const now = new Date();
   const year = now.getFullYear();

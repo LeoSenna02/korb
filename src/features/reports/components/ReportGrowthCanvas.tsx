@@ -197,7 +197,7 @@ export function ReportGrowthCanvas({ series }: ReportGrowthCanvasProps) {
       <div className="absolute inset-0">
         {chartModel.points.map((point, index) => (
           <button
-            key={`${point.date}-${point.weightGrams}-${point.heightCm}`}
+            key={`${point.date}-${point.weightGrams}-${point.heightCm}-${index}`}
             type="button"
             aria-label={`Crescimento em ${formatDateLong(point.date)}: ${formatWeightGramsForReport(point.weightGrams)} e ${formatNumber(point.heightCm)} centimetros`}
             className="absolute h-8 w-8 -translate-x-1/2 -translate-y-1/2 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"

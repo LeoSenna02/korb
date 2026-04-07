@@ -2,9 +2,11 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useBaby } from "@/contexts/BabyContext";
-import { getAllActivitiesForHistory, getWeeklyStats } from "@/lib/sync/repositories";
+import { getHistoryPage, getWeeklyStats } from "@/lib/sync/repositories";
 import { subscribeToDataSync } from "@/lib/sync/events";
 import type { HistoryActivity, HistoryGroup, HistoryFilter, WeeklyStat } from "../types";
+
+const HISTORY_PAGE_SIZE = 40;
 
 function groupActivitiesByDate(activities: HistoryActivity[]): HistoryGroup[] {
   const now = new Date();
@@ -76,8 +78,12 @@ interface UseHistoryDataReturn {
   filteredGroups: HistoryGroup[];
   weeklyStats: WeeklyStat[];
   isLoading: boolean;
+  isRefreshing: boolean;
+  isLoadingMore: boolean;
+  hasMore: boolean;
   error: string | null;
   refresh: () => void;
+  loadMore: () => void;
 }
 
 export function useHistoryData(): UseHistoryDataReturn {
@@ -85,11 +91,20 @@ export function useHistoryData(): UseHistoryDataReturn {
   const [activities, setActivities] = useState<HistoryActivity[]>([]);
   const [weeklyStats, setWeeklyStats] = useState<WeeklyStat[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [page, setPage] = useState(1);
+  const [hasResolvedOnce, setHasResolvedOnce] = useState(false);
 
   const refresh = useCallback(() => {
     setRefreshKey((k) => k + 1);
+  }, []);
+
+  const loadMore = useCallback(() => {
+    setPage((current) => current + 1);
   }, []);
 
   useEffect(() => subscribeToDataSync(refresh), [refresh]);
@@ -99,6 +114,11 @@ export function useHistoryData(): UseHistoryDataReturn {
       setActivities([]);
       setWeeklyStats([]);
       setIsLoading(false);
+      setIsRefreshing(false);
+      setIsLoadingMore(false);
+      setHasMore(false);
+      setHasResolvedOnce(false);
+      setPage(1);
       return;
     }
 
@@ -107,27 +127,40 @@ export function useHistoryData(): UseHistoryDataReturn {
     async function loadData() {
       if (!baby) return;
 
-      setIsLoading(true);
-      setError(null);
+      if (!hasResolvedOnce) {
+        setIsLoading(true);
+        setError(null);
+      } else if (page > 1) {
+        setIsLoadingMore(true);
+      } else {
+        setIsRefreshing(true);
+      }
 
       try {
-        const [allActivities, stats] = await Promise.all([
-          getAllActivitiesForHistory(baby.id),
+        const [pageResult, stats] = await Promise.all([
+          getHistoryPage(baby.id, HISTORY_PAGE_SIZE * page, 0),
           getWeeklyStats(baby.id),
         ]);
 
         if (!cancelled) {
-          setActivities(allActivities);
+          setActivities(pageResult.activities);
           setWeeklyStats(stats);
+          setHasMore(pageResult.hasMore);
+          setError(null);
         }
       } catch (err) {
         if (!cancelled) {
           console.error("[useHistoryData] Failed to load:", err);
-          setError("Erro ao carregar dados");
+          if (!hasResolvedOnce) {
+            setError("Erro ao carregar dados");
+          }
         }
       } finally {
         if (!cancelled) {
           setIsLoading(false);
+          setIsRefreshing(false);
+          setIsLoadingMore(false);
+          setHasResolvedOnce(true);
         }
       }
     }
@@ -137,7 +170,7 @@ export function useHistoryData(): UseHistoryDataReturn {
     return () => {
       cancelled = true;
     };
-  }, [baby, refreshKey]);
+  }, [baby, hasResolvedOnce, page, refreshKey]);
 
   const filteredGroups = useMemo(() => {
     if (activities.length === 0) return [];
@@ -149,8 +182,12 @@ export function useHistoryData(): UseHistoryDataReturn {
     filteredGroups,
     weeklyStats,
     isLoading,
+    isRefreshing,
+    isLoadingMore,
+    hasMore,
     error,
     refresh,
+    loadMore,
   };
 }
 

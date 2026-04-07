@@ -44,6 +44,7 @@ interface UseReportsDataReturn {
   rawDiapers: DiaperRecord[];
   rawGrowth: GrowthRecord[];
   isLoading: boolean;
+  isRefreshing: boolean;
   error: string | null;
   refresh: () => void;
 }
@@ -100,8 +101,10 @@ export function useReportsData(
 ): UseReportsDataReturn {
   const { baby } = useBaby();
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [hasResolvedOnce, setHasResolvedOnce] = useState(false);
 
   const [summaries, setSummaries] = useState<ReportSummary>(EMPTY_SUMMARY);
   const [summariesPrev, setSummariesPrev] = useState<ReportSummary>(EMPTY_SUMMARY);
@@ -128,6 +131,8 @@ export function useReportsData(
   useEffect(() => {
     if (!baby) {
       setIsLoading(false);
+      setIsRefreshing(false);
+      setHasResolvedOnce(false);
       return;
     }
 
@@ -136,8 +141,15 @@ export function useReportsData(
     async function loadData() {
       if (!baby) return;
 
-      setIsLoading(true);
-      setError(null);
+      if (hasResolvedOnce) {
+        setIsRefreshing(true);
+      } else {
+        setIsLoading(true);
+      }
+
+      if (!hasResolvedOnce) {
+        setError(null);
+      }
 
       try {
         const { start, prevStart, end } = getPeriodDates(period);
@@ -184,14 +196,19 @@ export function useReportsData(
         setRawSleeps(sleeps);
         setRawDiapers(diapers);
         setRawGrowth(allGrowth);
+        setError(null);
       } catch (err) {
         if (!cancelled) {
           console.error("[useReportsData] Failed to load:", err);
-          setError("Erro ao carregar dados");
+          if (!hasResolvedOnce) {
+            setError("Erro ao carregar dados");
+          }
         }
       } finally {
         if (!cancelled) {
           setIsLoading(false);
+          setIsRefreshing(false);
+          setHasResolvedOnce(true);
         }
       }
     }
@@ -201,7 +218,7 @@ export function useReportsData(
     return () => {
       cancelled = true;
     };
-  }, [baby, period, refreshKey]);
+  }, [baby, hasResolvedOnce, period, refreshKey]);
 
   const insights = useMemo(
     () => buildInsights(rawFeedings, rawSleeps, rawDiapers, rawGrowth, period),
@@ -225,6 +242,7 @@ export function useReportsData(
     rawDiapers,
     rawGrowth,
     isLoading,
+    isRefreshing,
     error,
     refresh,
   };

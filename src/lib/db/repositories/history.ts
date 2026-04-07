@@ -6,13 +6,18 @@ import type {
   PediatricAppointment,
 } from "../types";
 import type { HistoryActivity, WeeklyStat } from "@/features/history/types";
-import { getAppointmentsByBabyId } from "./appointment";
-import { getFeedingsByBabyId } from "./feeding";
-import { getDiapersByBabyId } from "./diaper";
-import { getSleepsByBabyId } from "./sleep";
-import { getGrowthByBabyId } from "./growth";
+import { getAppointmentsByBabyId, getRecentAttendedAppointments } from "./appointment";
+import { getFeedingsByBabyId, getRecentFeedings } from "./feeding";
+import { getDiapersByBabyId, getRecentDiapers } from "./diaper";
+import { getSleepsByBabyId, getRecentSleeps } from "./sleep";
+import { getGrowthByBabyId, getRecentGrowthRecords } from "./growth";
 import { getReportFeedings, getReportSleeps, getReportDiapers } from "./reports";
 import { formatDate, formatTime, formatDuration, formatDurationFromDates } from "@/lib/utils/format";
+
+export interface HistoryPageResult {
+  activities: HistoryActivity[];
+  hasMore: boolean;
+}
 
 function formatFeedingActivity(r: FeedingRecord): HistoryActivity {
   let title = "Amamentação";
@@ -140,6 +145,37 @@ export async function getAllActivitiesForHistory(
   activities.sort((a, b) => b.sortKey.localeCompare(a.sortKey));
 
   return activities;
+}
+
+export async function getHistoryPage(
+  babyId: string,
+  limit: number,
+  offset = 0
+): Promise<HistoryPageResult> {
+  const fetchCount = Math.max(limit + offset, limit);
+
+  const [feedings, diapers, sleeps, growth, appointments] = await Promise.all([
+    getRecentFeedings(babyId, fetchCount),
+    getRecentDiapers(babyId, fetchCount),
+    getRecentSleeps(babyId, fetchCount),
+    getRecentGrowthRecords(babyId, fetchCount),
+    getRecentAttendedAppointments(babyId, fetchCount),
+  ]);
+
+  const activities: HistoryActivity[] = [
+    ...feedings.map(formatFeedingActivity),
+    ...diapers.map(formatDiaperActivity),
+    ...sleeps.map(formatSleepActivity),
+    ...growth.map(formatGrowthActivity),
+    ...appointments.map(formatAppointmentActivity),
+  ];
+
+  activities.sort((a, b) => b.sortKey.localeCompare(a.sortKey));
+
+  return {
+    activities: activities.slice(offset, offset + limit),
+    hasMore: activities.length > offset + limit,
+  };
 }
 
 export async function getWeeklyStats(

@@ -17,6 +17,7 @@ export {
 
 export {
   getAllActivitiesForHistory,
+  getHistoryPage,
   getWeeklyStats,
 } from "@/lib/db/repositories/history";
 

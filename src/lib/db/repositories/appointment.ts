@@ -165,14 +165,26 @@ export async function getRecentAttendedAppointments(
   babyId: string,
   limit: number
 ): Promise<PediatricAppointment[]> {
-  const appointments = await getAppointmentsByBabyId(babyId);
+  const db = await getDB();
+  const tx = db.transaction("appointments");
+  const index = tx.store.index("byBabyIdAndScheduledAt");
+  const range = IDBKeyRange.bound([babyId, ""], [babyId, "\uffff"]);
+  const results: PediatricAppointment[] = [];
+  let cursor = await index.openCursor(range, "prev");
 
-  return appointments
-    .filter((appointment) => appointment.status === "attended")
-    .sort((a, b) =>
-      (b.attendedAt ?? b.updatedAt).localeCompare(a.attendedAt ?? a.updatedAt)
-    )
-    .slice(0, limit);
+  while (cursor && results.length < limit) {
+    const appointment = cursor.value;
+
+    if (appointment.status === "attended") {
+      results.push(appointment);
+    }
+
+    cursor = await cursor.continue();
+  }
+
+  return results.sort((a, b) =>
+    (b.attendedAt ?? b.updatedAt).localeCompare(a.attendedAt ?? a.updatedAt)
+  );
 }
 
 export async function getAppointmentLinkSuggestions(
