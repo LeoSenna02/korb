@@ -52,7 +52,7 @@ export function useJoinFamily({ userId, onSuccess }: UseJoinFamilyOptions): UseJ
           return { success: false, error: "NETWORK_ERROR" };
         }
 
-        const result = data as JoinFamilyResult;
+        const result = data as unknown as JoinFamilyResult;
 
         if (!result.success) {
           setIsJoining(false);
