@@ -183,6 +183,22 @@ const appointmentRecordSchema = z.object({
   updatedAt: requiredStringSchema,
 });
 
+const symptomEpisodeSchema = z.object({
+  id: optionalStringSchema.transform((value) => value ?? "legacy-symptom"),
+  babyId: optionalStringSchema.transform((value) => value ?? "legacy-baby"),
+  symptoms: z.array(requiredStringSchema).default([]),
+  severity: z.enum(["leve", "moderada", "alta"]),
+  status: z.enum(["active", "resolved"]),
+  startedAt: requiredStringSchema,
+  temperatureC: optionalNumberSchema,
+  medication: optionalStringSchema,
+  notes: optionalStringSchema,
+  resolvedAt: optionalStringSchema,
+  resolutionNotes: optionalStringSchema,
+  createdAt: requiredStringSchema,
+  updatedAt: requiredStringSchema,
+});
+
 export const appSettingsSchema = z.object({
   notificationsEnabled: z.boolean().default(true),
   soundEnabled: z.boolean().default(true),
@@ -204,6 +220,7 @@ export const babyBackupPayloadSchema = z.object({
     milestones: z.array(milestoneRecordSchema).default([]),
     vaccines: z.array(vaccineRecordSchema).default([]),
     appointments: z.array(appointmentRecordSchema).default([]),
+    symptoms: z.array(symptomEpisodeSchema).default([]),
   }),
   settings: appSettingsSchema.partial().default({}).transform((settings) =>
     appSettingsSchema.parse(settings)

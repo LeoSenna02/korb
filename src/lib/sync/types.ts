@@ -6,7 +6,8 @@ export type StoreName =
   | "sleeps"
   | "milestones"
   | "vaccines"
-  | "appointments";
+  | "appointments"
+  | "symptomEpisodes";
 
 export interface SyncQueueEntry {
   queueId: string;

@@ -10,13 +10,26 @@ function isNightTime(): boolean {
 }
 
 export function SleepActionButtons() {
-  const { isActive, isPaused, startSleep, endSleep, pauseSleep, resumeSleep, stopSleep } = useSleep();
+  const {
+    isActive,
+    isPaused,
+    startSleep,
+    endSleep,
+    pauseSleep,
+    resumeSleep,
+    stopSleep,
+    errorMessage,
+  } = useSleep();
   const router = useRouter();
   const night = isNightTime();
 
   const handleWakeUp = async () => {
-    await endSleep();
-    router.push("/dashboard");
+    try {
+      await endSleep();
+      router.push("/dashboard");
+    } catch {
+      return;
+    }
   };
 
   if (!isActive) {
@@ -38,6 +51,12 @@ export function SleepActionButtons() {
             </>
           )}
         </button>
+
+        {errorMessage ? (
+          <p className="rounded-2xl border border-red-400/20 bg-red-400/10 px-4 py-3 font-data text-xs text-red-100">
+            {errorMessage}
+          </p>
+        ) : null}
       </div>
     );
   }
@@ -77,6 +96,12 @@ export function SleepActionButtons() {
           <span className="text-[15px]">Parar</span>
         </button>
       </div>
+
+      {errorMessage ? (
+        <p className="rounded-2xl border border-red-400/20 bg-red-400/10 px-4 py-3 font-data text-xs text-red-100">
+          {errorMessage}
+        </p>
+      ) : null}
     </div>
   );
 }

@@ -1,62 +1,27 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { useBaby } from "@/contexts/BabyContext";
-import { useSleep } from "@/contexts/SleepContext";
-import { getTotalSleepSecondsToday } from "@/lib/sync/repositories/sleep";
-import { subscribeToDataSync } from "@/lib/sync/events";
-import { loadViewCache, readViewCache } from "@/lib/cache/view-cache";
+import { formatDuration } from "@/lib/utils/format";
+import { useSleepGoal } from "../hooks/useSleepGoal";
 
-const GOAL_SECONDS = 14 * 3600;
+function formatGoalValue(seconds: number): string {
+  const totalMinutes = Math.floor(seconds / 60);
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
 
-function formatDuration(seconds: number): string {
-  const h = Math.floor(seconds / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
-  return `${h}h ${m}m`;
+  if (minutes === 0) {
+    return `${hours}h`;
+  }
+
+  return `${hours}h${String(minutes).padStart(2, "0")}`;
 }
 
 export function SleepGoalCard() {
-  const { baby } = useBaby();
-  const { isActive } = useSleep();
-  const [totalSeconds, setTotalSeconds] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
-
-  const fetchTotal = useCallback(async () => {
-    if (!baby) return;
-    const cacheKey = `sleep-total-today:${baby.id}`;
-    const cached = readViewCache<number>(cacheKey);
-
-    if (cached != null) {
-      setTotalSeconds(cached);
-      setIsLoading(false);
-    } else {
-      setIsLoading(true);
-    }
-
-    try {
-      const total = await loadViewCache(cacheKey, () =>
-        getTotalSleepSecondsToday(baby.id)
-      );
-      setTotalSeconds(total);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [baby]);
-
-  useEffect(() => {
-    void fetchTotal();
-  }, [fetchTotal, isActive]);
-
-  useEffect(
-    () =>
-      subscribeToDataSync(() => {
-        void fetchTotal();
-      }),
-    [fetchTotal]
-  );
-
-  const progress = Math.min(totalSeconds / GOAL_SECONDS, 1);
-  const progressPercent = Math.round(progress * 100);
+  const { goal, isLoading } = useSleepGoal();
+  const totalSeconds = goal?.totalSecondsToday ?? 0;
+  const progressPercent = goal?.progressPercent ?? 0;
+  const goalLabel = goal
+    ? `${formatGoalValue(goal.minSeconds)}–${formatGoalValue(goal.maxSeconds)}`
+    : "--";
 
   return (
     <div className="mx-6 p-6 pb-5 bg-surface-container-low border border-outline-variant/10 rounded-[28px] relative z-10 mb-8">
@@ -70,7 +35,7 @@ export function SleepGoalCard() {
           </div>
         </div>
         <div className="font-data text-xs text-text-disabled pb-0.5">
-          Meta: <span className="text-primary font-medium tracking-wide">14h</span>
+          Meta: <span className="text-primary font-medium tracking-wide">{goalLabel}</span>
         </div>
       </div>
 

@@ -1,7 +1,7 @@
 import { openDB, type IDBPDatabase } from "idb";
 
 const DB_NAME = "korb-db";
-const DB_VERSION = 9;
+const DB_VERSION = 10;
 
 let dbPromise: Promise<IDBPDatabase> | null = null;
 
@@ -108,6 +108,26 @@ export function getDB(): Promise<IDBPDatabase> {
           s.createIndex("byScheduledAt", "scheduledAt");
           s.createIndex("byBabyIdAndScheduledAt", ["babyId", "scheduledAt"]);
           s.createIndex("byBabyIdAndStatus", ["babyId", "status"]);
+        }
+
+        if (!db.objectStoreNames.contains("symptomEpisodes")) {
+          const s = db.createObjectStore("symptomEpisodes", { keyPath: "id" });
+          s.createIndex("byBabyId", "babyId");
+          s.createIndex("byStatus", "status");
+          s.createIndex("byStartedAt", "startedAt");
+          s.createIndex("byResolvedAt", "resolvedAt");
+          s.createIndex("byBabyIdAndStatus", ["babyId", "status"]);
+          s.createIndex("byBabyIdAndStartedAt", ["babyId", "startedAt"]);
+          s.createIndex("byBabyIdAndResolvedAt", ["babyId", "resolvedAt"]);
+        } else if (oldVersion > 0 && oldVersion < 10 && tx) {
+          const s = tx.objectStore("symptomEpisodes");
+          if (!s.indexNames.contains("byBabyId")) s.createIndex("byBabyId", "babyId");
+          if (!s.indexNames.contains("byStatus")) s.createIndex("byStatus", "status");
+          if (!s.indexNames.contains("byStartedAt")) s.createIndex("byStartedAt", "startedAt");
+          if (!s.indexNames.contains("byResolvedAt")) s.createIndex("byResolvedAt", "resolvedAt");
+          if (!s.indexNames.contains("byBabyIdAndStatus")) s.createIndex("byBabyIdAndStatus", ["babyId", "status"]);
+          if (!s.indexNames.contains("byBabyIdAndStartedAt")) s.createIndex("byBabyIdAndStartedAt", ["babyId", "startedAt"]);
+          if (!s.indexNames.contains("byBabyIdAndResolvedAt")) s.createIndex("byBabyIdAndResolvedAt", ["babyId", "resolvedAt"]);
         }
 
         // v8: sync queue for offline-first write-through to Supabase

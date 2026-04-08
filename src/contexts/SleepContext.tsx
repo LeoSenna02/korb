@@ -4,14 +4,20 @@ import React,
   {
     createContext,
     useCallback,
-    useEffect,
     useMemo,
-    useRef,
     useState,
   } from "react";
 import { useBaby } from "./BabyContext";
-import { saveSleep } from "@/lib/sync/repositories/sleep";
 import type { SleepType } from "@/lib/db/types";
+import { useSharedSleepSession } from "@/features/sleep/hooks/useSharedSleepSession";
+import {
+  cancelSleepSessionAction,
+  completeSleepSessionAction,
+  pauseSleepSessionAction,
+  resumeSleepSessionAction,
+  startSleepSessionAction,
+} from "@/features/sleep/actions/sleep-session";
+import type { SleepSessionActionResult } from "@/features/sleep/types";
 
 interface SleepContextValue {
   isActive: boolean;
@@ -19,6 +25,7 @@ interface SleepContextValue {
   startedAt: string | null;
   sleepType: SleepType;
   elapsedSeconds: number;
+  errorMessage: string | null;
   startSleep: (type?: SleepType) => void;
   endSleep: (notes?: string) => Promise<void>;
   pauseSleep: () => void;
@@ -28,237 +35,145 @@ interface SleepContextValue {
 
 const SleepContext = createContext<SleepContextValue | null>(null);
 
-const STORAGE_KEY = "korb_sleep_state";
-
-interface PersistedSleepState {
-  startedAt: string;
-  sleepType: SleepType;
-  isPaused: boolean;
-  pausedDurationMs: number;
-  pauseStartTime: number | null;
-}
-
-interface InitialSleepState {
-  startedAt: string | null;
-  sleepType: SleepType;
-  elapsedSeconds: number;
-  isPaused: boolean;
-  pausedDurationMs: number;
-  pauseStartTime: number | null;
-}
-
-function loadPersistedState(): PersistedSleepState | null {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return null;
-    return JSON.parse(raw) as PersistedSleepState;
-  } catch {
-    return null;
-  }
-}
-
-function persistState(state: PersistedSleepState | null) {
-  if (state) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  } else {
-    localStorage.removeItem(STORAGE_KEY);
-  }
-}
-
-function getInitialSleepState(): InitialSleepState {
-  if (typeof window === "undefined") {
-    return {
-      startedAt: null,
-      sleepType: "nap",
-      elapsedSeconds: 0,
-      isPaused: false,
-      pausedDurationMs: 0,
-      pauseStartTime: null,
-    };
-  }
-
-  const saved = loadPersistedState();
-  if (!saved) {
-    return {
-      startedAt: null,
-      sleepType: "nap",
-      elapsedSeconds: 0,
-      isPaused: false,
-      pausedDurationMs: 0,
-      pauseStartTime: null,
-    };
-  }
-
-  const elapsed = Math.floor(
-    (Date.now() -
-      new Date(saved.startedAt).getTime() -
-      saved.pausedDurationMs -
-      (saved.isPaused && saved.pauseStartTime
-        ? Date.now() - saved.pauseStartTime
-        : 0)) / 1000
-  );
-
-  return {
-    startedAt: saved.startedAt,
-    sleepType: saved.sleepType,
-    elapsedSeconds: Math.max(0, elapsed),
-    isPaused: saved.isPaused,
-    pausedDurationMs: saved.pausedDurationMs,
-    pauseStartTime: saved.pauseStartTime,
-  };
-}
-
 interface SleepProviderProps {
   children: React.ReactNode;
 }
 
 export function SleepProvider({ children }: SleepProviderProps) {
   const { baby } = useBaby();
-  const [initialState] = useState(getInitialSleepState);
-  const [startedAt, setStartedAt] = useState<string | null>(initialState.startedAt);
-  const [sleepType, setSleepType] = useState<SleepType>(initialState.sleepType);
-  const [elapsedSeconds, setElapsedSeconds] = useState(initialState.elapsedSeconds);
-  const [isPaused, setIsPaused] = useState(initialState.isPaused);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const pausedDurationRef = useRef(initialState.pausedDurationMs);
-  const pauseStartTimeRef = useRef<number | null>(initialState.pauseStartTime);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const { session, elapsedSeconds, applySession, clearSession, refreshSession } =
+    useSharedSleepSession(baby?.id ?? null);
 
-  useEffect(() => {
-    if (startedAt) {
-      persistState({
-        startedAt,
-        sleepType,
-        isPaused,
-        pausedDurationMs: pausedDurationRef.current,
-        pauseStartTime: pauseStartTimeRef.current,
-      });
-    } else {
-      persistState(null);
-    }
-  }, [startedAt, sleepType, isPaused]);
+  const runSleepAction = useCallback(
+    async (
+      action: () => Promise<SleepSessionActionResult>,
+      onSuccess?: (result: SleepSessionActionResult) => void
+    ) => {
+      if (!baby) {
+        const message = "Selecione um bebe para registrar o sono.";
+        setErrorMessage(message);
+        throw new Error(message);
+      }
 
-  const syncElapsedSeconds = useCallback(() => {
-    if (!startedAt || isPaused) {
+      if (typeof navigator !== "undefined" && !navigator.onLine) {
+        const message = "Conecte-se a internet para compartilhar o timer de sono.";
+        setErrorMessage(message);
+        throw new Error(message);
+      }
+
+      setErrorMessage(null);
+
+      const result = await action();
+      if (!result.success) {
+        const message = result.message ?? "Erro ao atualizar a sessao de sono.";
+        setErrorMessage(message);
+
+        if (result.errorCode === "NO_ACTIVE_SESSION") {
+          clearSession();
+          await refreshSession();
+        }
+
+        throw new Error(message);
+      }
+
+      if (result.session) {
+        applySession(result.session);
+      } else {
+        clearSession();
+      }
+
+      onSuccess?.(result);
+    },
+    [applySession, baby, clearSession, refreshSession]
+  );
+
+  const startSleep = useCallback((type: SleepType = "nap") => {
+    if (!baby) {
+      setErrorMessage("Selecione um bebe para registrar o sono.");
       return;
     }
 
-    const elapsed = Math.floor(
-      (Date.now() - new Date(startedAt).getTime() - pausedDurationRef.current) / 1000
-    );
-    setElapsedSeconds(Math.max(0, elapsed));
-  }, [startedAt, isPaused]);
-
-  useEffect(() => {
-    if (startedAt && !isPaused) {
-      syncElapsedSeconds();
-      intervalRef.current = setInterval(syncElapsedSeconds, 1000);
-    } else {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
-    }
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
-    };
-  }, [startedAt, isPaused, syncElapsedSeconds]);
-
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      syncElapsedSeconds();
-    };
-
-    window.addEventListener("focus", syncElapsedSeconds);
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-
-    return () => {
-      window.removeEventListener("focus", syncElapsedSeconds);
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-    };
-  }, [syncElapsedSeconds]);
-
-  const startSleep = useCallback((type: SleepType = "nap") => {
-    setStartedAt(new Date().toISOString());
-    setSleepType(type);
-    setElapsedSeconds(0);
-    setIsPaused(false);
-    pausedDurationRef.current = 0;
-    pauseStartTimeRef.current = null;
-  }, []);
+    void runSleepAction(() =>
+      startSleepSessionAction({
+        babyId: baby.id,
+        type,
+      })
+    ).catch(() => undefined);
+  }, [baby, runSleepAction]);
 
   const pauseSleep = useCallback(() => {
-    if (!startedAt || isPaused) return;
-    syncElapsedSeconds();
-    pauseStartTimeRef.current = Date.now();
-    setIsPaused(true);
-  }, [startedAt, isPaused, syncElapsedSeconds]);
+    if (!baby) {
+      setErrorMessage("Selecione um bebe para registrar o sono.");
+      return;
+    }
+
+    void runSleepAction(() =>
+      pauseSleepSessionAction({
+        babyId: baby.id,
+      })
+    ).catch(() => undefined);
+  }, [baby, runSleepAction]);
 
   const resumeSleep = useCallback(() => {
-    if (!isPaused) return;
-    if (pauseStartTimeRef.current) {
-      pausedDurationRef.current += Date.now() - pauseStartTimeRef.current;
-      pauseStartTimeRef.current = null;
+    if (!baby) {
+      setErrorMessage("Selecione um bebe para registrar o sono.");
+      return;
     }
-    setIsPaused(false);
-  }, [isPaused]);
+
+    void runSleepAction(() =>
+      resumeSleepSessionAction({
+        babyId: baby.id,
+      })
+    ).catch(() => undefined);
+  }, [baby, runSleepAction]);
 
   const stopSleep = useCallback(() => {
-    setStartedAt(null);
-    setElapsedSeconds(0);
-    setIsPaused(false);
-    pausedDurationRef.current = 0;
-    pauseStartTimeRef.current = null;
-  }, []);
+    if (!baby) {
+      setErrorMessage("Selecione um bebe para registrar o sono.");
+      return;
+    }
+
+    void runSleepAction(() =>
+      cancelSleepSessionAction({
+        babyId: baby.id,
+      })
+    ).catch(() => undefined);
+  }, [baby, runSleepAction]);
 
   const endSleep = useCallback(
     async (notes?: string) => {
-      if (!startedAt || !baby) return;
+      if (!baby) {
+        const message = "Selecione um bebe para registrar o sono.";
+        setErrorMessage(message);
+        throw new Error(message);
+      }
 
-      const totalPaused = pausedDurationRef.current +
-        (isPaused && pauseStartTimeRef.current
-          ? Date.now() - pauseStartTimeRef.current
-          : 0);
-
-      const effectiveDuration =
-        Date.now() - new Date(startedAt).getTime() - totalPaused;
-      const endedAt = new Date(
-        new Date(startedAt).getTime() + effectiveDuration
-      ).toISOString();
-
-      await saveSleep({
-        babyId: baby.id,
-        type: sleepType,
-        startedAt,
-        endedAt,
-        notes,
-      });
-
-      setStartedAt(null);
-      setElapsedSeconds(0);
-      setIsPaused(false);
-      pausedDurationRef.current = 0;
-      pauseStartTimeRef.current = null;
+      await runSleepAction(() =>
+        completeSleepSessionAction({
+          babyId: baby.id,
+          notes,
+        })
+      );
     },
-    [startedAt, baby, sleepType, isPaused]
+    [baby, runSleepAction]
   );
 
   const value = useMemo<SleepContextValue>(
     () => ({
-      isActive: startedAt !== null,
-      isPaused,
-      startedAt,
-      sleepType,
+      isActive: session !== null,
+      isPaused: session?.isPaused ?? false,
+      startedAt: session?.startedAt ?? null,
+      sleepType: session?.type ?? "nap",
       elapsedSeconds,
+      errorMessage,
       startSleep,
       endSleep,
       pauseSleep,
       resumeSleep,
       stopSleep,
     }),
-    [startedAt, isPaused, sleepType, elapsedSeconds, startSleep, endSleep, pauseSleep, resumeSleep, stopSleep]
+    [session, elapsedSeconds, errorMessage, startSleep, endSleep, pauseSleep, resumeSleep, stopSleep]
   );
 
   return <SleepContext.Provider value={value}>{children}</SleepContext.Provider>;

@@ -7,6 +7,7 @@ import type {
   GrowthRecord,
   PediatricAppointment,
   SleepRecord,
+  SymptomEpisode,
 } from "@/lib/db/types";
 import type { MilestoneRecord } from "@/features/milestones/types";
 import type { VaccineRecord } from "@/features/vaccines/types";
@@ -21,6 +22,7 @@ interface PullResult {
   appointments: number;
   milestones: number;
   vaccines: number;
+  symptoms: number;
 }
 
 export async function pullAllDataFromServer(
@@ -36,6 +38,7 @@ export async function pullAllDataFromServer(
     appointments: 0,
     milestones: 0,
     vaccines: 0,
+    symptoms: 0,
   };
 
   const { data: caregiverRows, error: cgError } = await supabase
@@ -82,6 +85,7 @@ export async function pullAllDataFromServer(
     appointmentRes,
     milestoneRes,
     vaccineRes,
+    symptomRes,
   ] = await Promise.all([
     supabase.from("feedings").select("*").in("baby_id", babyIds),
     supabase.from("diapers").select("*").in("baby_id", babyIds),
@@ -90,6 +94,7 @@ export async function pullAllDataFromServer(
     supabase.from("appointments").select("*").in("baby_id", babyIds),
     supabase.from("milestones").select("*").in("baby_id", babyIds),
     supabase.from("vaccines").select("*").in("baby_id", babyIds),
+    supabase.from("symptom_episodes").select("*").in("baby_id", babyIds),
   ]);
 
   const feedings: FeedingRecord[] = (feedingRes.data ?? []).map((r) => ({
@@ -187,6 +192,22 @@ export async function pullAllDataFromServer(
     updatedAt: r.updated_at,
   }));
 
+  const symptoms: SymptomEpisode[] = (symptomRes.data ?? []).map((r) => ({
+    id: r.id,
+    babyId: r.baby_id,
+    symptoms: r.symptoms ?? [],
+    severity: r.severity,
+    status: r.status,
+    startedAt: r.started_at,
+    temperatureC: r.temperature_c ?? undefined,
+    medication: r.medication ?? undefined,
+    notes: r.notes ?? undefined,
+    resolvedAt: r.resolved_at ?? undefined,
+    resolutionNotes: r.resolution_notes ?? undefined,
+    createdAt: r.created_at,
+    updatedAt: r.updated_at,
+  }));
+
   const db = await getDB();
 
   const allRecords = [
@@ -198,6 +219,7 @@ export async function pullAllDataFromServer(
     ...appointments.map((r) => ({ store: "appointments" as const, record: r })),
     ...milestones.map((r) => ({ store: "milestones" as const, record: r })),
     ...vaccines.map((r) => ({ store: "vaccines" as const, record: r })),
+    ...symptoms.map((r) => ({ store: "symptomEpisodes" as const, record: r })),
   ];
 
   const storeNames = [...new Set(allRecords.map((r) => r.store))];
@@ -218,9 +240,10 @@ export async function pullAllDataFromServer(
   result.appointments = appointments.length;
   result.milestones = milestones.length;
   result.vaccines = vaccines.length;
+  result.symptoms = symptoms.length;
 
   console.info(
-    `[pull] Completed: ${result.babies} babies, ${result.feedings} feedings, ${result.diapers} diapers, ${result.growth} growth, ${result.sleeps} sleeps, ${result.appointments} appointments, ${result.milestones} milestones, ${result.vaccines} vaccines`
+    `[pull] Completed: ${result.babies} babies, ${result.feedings} feedings, ${result.diapers} diapers, ${result.growth} growth, ${result.sleeps} sleeps, ${result.appointments} appointments, ${result.milestones} milestones, ${result.vaccines} vaccines, ${result.symptoms} symptoms`
   );
 
   emitDataSyncEvent();

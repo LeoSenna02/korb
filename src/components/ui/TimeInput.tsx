@@ -44,12 +44,23 @@ export const TimeInput = forwardRef<HTMLDivElement, TimeInputProps>(
 
     const [hour, setHour] = useState(() => parseInitial(initialValue).hour);
     const [minute, setMinute] = useState(() => parseInitial(initialValue).minute);
+    const onChangeRef = useRef(onChange);
+    const lastEmittedValueRef = useRef<string | null>(null);
 
     const formattedTime = `${hour}:${minute}`;
 
     useEffect(() => {
-      onChange?.(formattedTime);
-    }, [formattedTime, onChange]);
+      onChangeRef.current = onChange;
+    }, [onChange]);
+
+    useEffect(() => {
+      if (lastEmittedValueRef.current === formattedTime) {
+        return;
+      }
+
+      lastEmittedValueRef.current = formattedTime;
+      onChangeRef.current?.(formattedTime);
+    }, [formattedTime]);
 
     return (
       <div 
@@ -158,13 +169,24 @@ function ScrollWheel({ options, value, onChange, widthClass }: { options: string
 
       isInteracting.current = true;
 
-      const maxScrollTop = (options.length - 1) * ITEM_HEIGHT;
-      const nextTop = Math.min(
-        Math.max(container.scrollTop + e.deltaY, 0),
-        maxScrollTop
+      const currentIndex = Math.min(
+        Math.max(Math.round(container.scrollTop / ITEM_HEIGHT), 0),
+        options.length - 1
       );
+      const direction = e.deltaY > 0 ? 1 : e.deltaY < 0 ? -1 : 0;
+      const nextIndex = Math.min(
+        Math.max(currentIndex + direction, 0),
+        options.length - 1
+      );
+      const nextTop = nextIndex * ITEM_HEIGHT;
 
       container.scrollTop = nextTop;
+
+      const nextValue = options[nextIndex];
+      if (nextValue !== value) {
+        onChange(nextValue);
+      }
+
       scheduleFinalize();
     }
 

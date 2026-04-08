@@ -1,6 +1,13 @@
 "use client";
 
-import { Droplet, Baby, Moon, BarChart2, Stethoscope } from "lucide-react";
+import {
+  Droplet,
+  Baby,
+  Moon,
+  BarChart2,
+  Stethoscope,
+  Thermometer,
+} from "lucide-react";
 import type { HistoryFilter } from "../types";
 import type { HistoryActivity } from "../types";
 
@@ -10,6 +17,7 @@ const FILTERS: { label: string; value: HistoryFilter }[] = [
   { label: "Fralda", value: "fralda" },
   { label: "Sono", value: "sono" },
   { label: "Crescimento", value: "crescimento" },
+  { label: "Sintomas", value: "sintomas" },
   { label: "Consulta", value: "consulta" },
 ];
 
@@ -18,6 +26,7 @@ const iconMap: Record<HistoryActivity["type"], React.ElementType> = {
   fralda: Droplet,
   sono: Moon,
   crescimento: BarChart2,
+  sintomas: Thermometer,
   consulta: Stethoscope,
 };
 
@@ -26,6 +35,7 @@ const iconColorMap: Record<HistoryActivity["type"], string> = {
   fralda: "text-[#D2B59D]",
   sono: "text-[#B48EAD]",
   crescimento: "text-text-primary",
+  sintomas: "text-[#CD8282]",
   consulta: "text-[#88AFC7]",
 };
 
@@ -34,6 +44,7 @@ const iconBgMap: Record<HistoryActivity["type"], string> = {
   fralda: "bg-[#D2B59D]/10",
   sono: "bg-[#B48EAD]/10",
   crescimento: "bg-surface-variant",
+  sintomas: "bg-[#CD8282]/10",
   consulta: "bg-[#88AFC7]/10",
 };
 
@@ -85,6 +96,7 @@ export function ActivityCard({ activity }: ActivityCardProps) {
           ${activity.type === "fralda" ? "bg-[#D2B59D]" : ""}
           ${activity.type === "sono" ? "bg-[#B48EAD]" : ""}
           ${activity.type === "crescimento" ? "bg-text-disabled" : ""}
+          ${activity.type === "sintomas" ? "bg-[#CD8282]" : ""}
           ${activity.type === "consulta" ? "bg-[#88AFC7]" : ""}
         `}
       />

@@ -67,6 +67,25 @@ export interface SleepRecord {
   createdAt: string;
 }
 
+export type SymptomSeverity = "leve" | "moderada" | "alta";
+export type SymptomEpisodeStatus = "active" | "resolved";
+
+export interface SymptomEpisode {
+  id: string;
+  babyId: string;
+  symptoms: string[];
+  severity: SymptomSeverity;
+  status: SymptomEpisodeStatus;
+  startedAt: string;
+  temperatureC?: number;
+  medication?: string;
+  notes?: string;
+  resolvedAt?: string;
+  resolutionNotes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export type PediatricAppointmentStatus = "scheduled" | "attended";
 
 export interface PediatricAppointment {
@@ -93,4 +112,5 @@ export type ActivityRecord =
   | (DiaperRecord & { activityType: "diaper" })
   | (GrowthRecord & { activityType: "growth" })
   | (SleepRecord & { activityType: "sleep" })
+  | (SymptomEpisode & { activityType: "symptom" })
   | (PediatricAppointment & { activityType: "appointment" });

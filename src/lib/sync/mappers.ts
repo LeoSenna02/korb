@@ -1,4 +1,12 @@
-import type { Baby, FeedingRecord, DiaperRecord, GrowthRecord, SleepRecord, PediatricAppointment } from "@/lib/db/types";
+import type {
+  Baby,
+  FeedingRecord,
+  DiaperRecord,
+  GrowthRecord,
+  SleepRecord,
+  PediatricAppointment,
+  SymptomEpisode,
+} from "@/lib/db/types";
 import type { MilestoneRecord } from "@/features/milestones/types";
 import type { VaccineRecord } from "@/features/vaccines/types";
 
@@ -128,6 +136,24 @@ export function appointmentToRow(r: PediatricAppointment) {
   };
 }
 
+export function symptomEpisodeToRow(r: SymptomEpisode) {
+  return {
+    id: r.id,
+    baby_id: r.babyId,
+    symptoms: r.symptoms,
+    severity: r.severity,
+    status: r.status,
+    started_at: r.startedAt,
+    temperature_c: r.temperatureC ?? null,
+    medication: r.medication ?? null,
+    notes: r.notes ?? null,
+    resolved_at: r.resolvedAt ?? null,
+    resolution_notes: r.resolutionNotes ?? null,
+    created_at: r.createdAt,
+    updated_at: r.updatedAt,
+  };
+}
+
 // ─── Table name map ───────────────────────────────────────────────────────────
 
 export const STORE_TO_TABLE: Record<string, string> = {
@@ -139,4 +165,5 @@ export const STORE_TO_TABLE: Record<string, string> = {
   milestones: "milestones",
   vaccines: "vaccines",
   appointments: "appointments",
+  symptomEpisodes: "symptom_episodes",
 };

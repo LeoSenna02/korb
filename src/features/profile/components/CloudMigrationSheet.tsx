@@ -16,6 +16,7 @@ const STAGE_LABELS: Record<MigrationStage, string> = {
   milestones: "Enviando marcos...",
   vaccines: "Enviando vacinas...",
   appointments: "Enviando consultas...",
+  symptoms: "Enviando sintomas...",
   done: "Migração concluída!",
   error: "Erro na migração",
 };
@@ -30,6 +31,7 @@ const STAGE_ORDER: MigrationStage[] = [
   "milestones",
   "vaccines",
   "appointments",
+  "symptoms",
   "done",
 ];
 
@@ -147,7 +149,7 @@ export function CloudMigrationSheet({
                       Enviar dados para a nuvem
                     </p>
                     <p className="font-data text-xs text-text-secondary mt-1 leading-relaxed">
-                      Todos os seus registros locais (mamadas, fraldas, sono, crescimento, marcos, vacinas e consultas)
+                      Todos os seus registros locais (mamadas, fraldas, sono, crescimento, marcos, vacinas, consultas e sintomas)
                       serão enviados para o Supabase. A operação é segura e pode ser repetida sem duplicar dados.
                     </p>
                   </div>

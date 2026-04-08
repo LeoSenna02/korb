@@ -12,7 +12,13 @@ import { pullAllDataFromServer } from "./pull";
  */
 export function useRealtimeSync(userId: string | null) {
   const scheduledSyncRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const supabase = createClient();
+  const supabaseRef = useRef<ReturnType<typeof createClient> | null>(null);
+
+  if (!supabaseRef.current) {
+    supabaseRef.current = createClient();
+  }
+
+  const supabase = supabaseRef.current;
 
   useEffect(() => {
     if (!userId) {
@@ -105,6 +111,11 @@ export function useRealtimeSync(userId: string | null) {
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "vaccines" },
+        scheduleSyncFromServer
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "symptom_episodes" },
         scheduleSyncFromServer
       )
       .subscribe();

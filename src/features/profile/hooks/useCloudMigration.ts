@@ -5,7 +5,6 @@ import { createClient } from "@/lib/supabase/client";
 import { createBabyBackupSnapshot } from "@/lib/db/repositories/backup";
 import { getDB } from "@/lib/db";
 import {
-  babyToRow,
   feedingToRow,
   diaperToRow,
   growthToRow,
@@ -13,6 +12,7 @@ import {
   milestoneToRow,
   vaccineToRow,
   appointmentToRow,
+  symptomEpisodeToRow,
 } from "@/lib/sync/mappers";
 import type { Baby } from "@/lib/db/types";
 import type { AppSettings } from "../types";
@@ -28,6 +28,7 @@ export type MigrationStage =
   | "milestones"
   | "vaccines"
   | "appointments"
+  | "symptoms"
   | "done"
   | "error";
 
@@ -87,16 +88,19 @@ export function useCloudMigration(baby: Baby | null, settings: AppSettings) {
 
       // 2. Upsert baby via RPC (atomic + RLS-safe)
       setStage("babies", 0, 1);
-      const { error: rpcError } = await supabase.rpc("create_baby_with_owner" as any, {
-        p_id: baby.id,
-        p_name: baby.name,
-        p_family_name: baby.familyName,
-        p_birth_date: baby.birthDate,
-        p_birth_time: baby.birthTime ?? null,
-        p_gender: baby.gender,
-        p_blood_type: baby.bloodType ?? null,
-        p_photo_url: baby.photoUrl ?? null,
-      } as any);
+      const { error: rpcError } = await supabase.rpc(
+        "create_baby_with_owner",
+        {
+          p_id: baby.id,
+          p_name: baby.name,
+          p_family_name: baby.familyName,
+          p_birth_date: baby.birthDate,
+          p_birth_time: baby.birthTime ?? null,
+          p_gender: baby.gender,
+          p_blood_type: baby.bloodType ?? null,
+          p_photo_url: baby.photoUrl ?? null,
+        } as never
+      );
       if (rpcError) throw new Error(`[babies] ${rpcError.message}`);
       setStage("babies", 1, 1);
 
@@ -162,6 +166,14 @@ export function useCloudMigration(baby: Baby | null, settings: AppSettings) {
       await uploadChunks(supabase, "appointments", appointmentRows);
       await markSyncedInIDB("appointments", appointmentRows.map((r) => r.id));
       setStage("appointments", appointmentRows.length, appointmentRows.length);
+
+      const symptomRows = snapshot.records.symptoms
+        .filter((r) => !("synced" in r && r.synced))
+        .map(symptomEpisodeToRow);
+      setStage("symptoms", 0, symptomRows.length);
+      await uploadChunks(supabase, "symptom_episodes", symptomRows);
+      await markSyncedInIDB("symptomEpisodes", symptomRows.map((r) => r.id));
+      setStage("symptoms", symptomRows.length, symptomRows.length);
 
       setStage("done");
     } catch (err) {

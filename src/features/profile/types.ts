@@ -5,6 +5,7 @@ import type {
   GrowthRecord,
   PediatricAppointment,
   SleepRecord,
+  SymptomEpisode,
 } from "@/lib/db/types";
 import type { MilestoneRecord } from "@/features/milestones/types";
 import type { VaccineRecord } from "@/features/vaccines/types";
@@ -40,8 +41,10 @@ export interface DataStats {
   totalSleeps: number;
   totalDiapers: number;
   totalGrowth: number;
+  totalMilestones: number;
   totalVaccines: number;
   totalAppointments: number;
+  totalSymptoms?: number;
   totalDays: number;
   lastBackup?: string;
 }
@@ -64,6 +67,7 @@ export interface BackupRecordCollection {
   milestones: MilestoneRecord[];
   vaccines: VaccineRecord[];
   appointments: PediatricAppointment[];
+  symptoms: SymptomEpisode[];
 }
 
 export interface BabyBackupPayload {
@@ -87,5 +91,6 @@ export interface ImportPreview {
     totalMilestones: number;
     totalVaccines: number;
     totalAppointments: number;
+    totalSymptoms: number;
   };
 }

@@ -1,4 +1,4 @@
-import type { Baby, PediatricAppointment } from "../types";
+import type { Baby, PediatricAppointment, SymptomEpisode } from "../types";
 import type { MilestoneRecord } from "@/features/milestones/types";
 import type { VaccineRecord } from "@/features/vaccines/types";
 import type { AppSettings, BabyBackupPayload } from "@/features/profile/types";
@@ -11,6 +11,7 @@ import { getMilestonesByBabyId } from "./milestone";
 import { getSleepsByBabyId } from "./sleep";
 import { getVaccinesByBabyId } from "./vaccine";
 import { getAppointmentsByBabyId } from "./appointment";
+import { getSymptomEpisodesByBabyId } from "./symptom";
 import { emitDataSyncEvent } from "@/lib/sync/events";
 import { clearQueuedEntries } from "@/lib/sync/queue";
 import type { StoreName } from "@/lib/sync/types";
@@ -23,6 +24,7 @@ const RESETTABLE_STORES = [
   "milestones",
   "vaccines",
   "appointments",
+  "symptomEpisodes",
 ] as const satisfies readonly StoreName[];
 
 function mapBabyToBackupProfile(baby: Baby): BabyBackupPayload["baby"] {
@@ -70,11 +72,22 @@ function remapAppointmentRecord(
   };
 }
 
+function remapSymptomEpisodeRecord(
+  record: SymptomEpisode,
+  babyId: string
+): SymptomEpisode {
+  return {
+    ...record,
+    id: generateId(),
+    babyId,
+  };
+}
+
 export async function createBabyBackupSnapshot(
   baby: Baby,
   settings: AppSettings
 ): Promise<BabyBackupPayload> {
-  const [feedings, sleeps, diapers, growth, milestones, vaccines, appointments] = await Promise.all([
+  const [feedings, sleeps, diapers, growth, milestones, vaccines, appointments, symptoms] = await Promise.all([
     getFeedingsByBabyId(baby.id),
     getSleepsByBabyId(baby.id),
     getDiapersByBabyId(baby.id),
@@ -82,6 +95,7 @@ export async function createBabyBackupSnapshot(
     getMilestonesByBabyId(baby.id),
     getVaccinesByBabyId(baby.id),
     getAppointmentsByBabyId(baby.id),
+    getSymptomEpisodesByBabyId(baby.id),
   ]);
 
   return {
@@ -96,6 +110,7 @@ export async function createBabyBackupSnapshot(
       milestones,
       vaccines,
       appointments,
+      symptoms,
     },
     settings,
   };
@@ -107,7 +122,7 @@ export async function replaceBabyDataFromBackup(
 ): Promise<void> {
   const db = await getDB();
   const tx = db.transaction(
-    ["babies", "feedings", "diapers", "growth", "sleeps", "milestones", "vaccines", "appointments"],
+    ["babies", "feedings", "diapers", "growth", "sleeps", "milestones", "vaccines", "appointments", "symptomEpisodes"],
     "readwrite"
   );
 
@@ -119,6 +134,7 @@ export async function replaceBabyDataFromBackup(
   const milestonesStore = tx.objectStore("milestones");
   const vaccinesStore = tx.objectStore("vaccines");
   const appointmentsStore = tx.objectStore("appointments");
+  const symptomEpisodesStore = tx.objectStore("symptomEpisodes");
 
   const now = new Date().toISOString();
   const updatedBaby: Baby = {
@@ -137,6 +153,7 @@ export async function replaceBabyDataFromBackup(
     milestoneKeys,
     vaccineKeys,
     appointmentKeys,
+    symptomEpisodeKeys,
   ] = await Promise.all([
     feedingsStore.index("byBabyId").getAllKeys(IDBKeyRange.only(currentBaby.id)),
     diapersStore.index("byBabyId").getAllKeys(IDBKeyRange.only(currentBaby.id)),
@@ -145,6 +162,7 @@ export async function replaceBabyDataFromBackup(
     milestonesStore.index("byBabyId").getAllKeys(IDBKeyRange.only(currentBaby.id)),
     vaccinesStore.index("byBabyId").getAllKeys(IDBKeyRange.only(currentBaby.id)),
     appointmentsStore.index("byBabyId").getAllKeys(IDBKeyRange.only(currentBaby.id)),
+    symptomEpisodesStore.index("byBabyId").getAllKeys(IDBKeyRange.only(currentBaby.id)),
   ]);
 
   for (const key of feedingKeys) {
@@ -173,6 +191,10 @@ export async function replaceBabyDataFromBackup(
 
   for (const key of appointmentKeys) {
     await appointmentsStore.delete(key);
+  }
+
+  for (const key of symptomEpisodeKeys) {
+    await symptomEpisodesStore.delete(key);
   }
 
   for (const record of payload.records.feedings) {
@@ -217,6 +239,12 @@ export async function replaceBabyDataFromBackup(
 
   for (const record of payload.records.appointments) {
     await appointmentsStore.put(remapAppointmentRecord(record, currentBaby.id));
+  }
+
+  for (const record of payload.records.symptoms) {
+    await symptomEpisodesStore.put(
+      remapSymptomEpisodeRecord(record, currentBaby.id)
+    );
   }
 
   await tx.done;

@@ -41,8 +41,6 @@ export function ProfileClientWrapper() {
       {activeSection === "summary" && (
         <>
           <BabySummarySection
-            babyName={babyProfile.name}
-            birthDate={babyProfile.birthDate}
             counts={counts}
             totalDays={dataStats.totalDays}
           />

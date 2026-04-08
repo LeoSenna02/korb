@@ -3,20 +3,18 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import {
-  Baby,
   Milk,
   Moon,
   Droplets,
   Ruler,
+  Sparkles,
   CalendarHeart,
   TrendingUp,
 } from "lucide-react";
 import type { RecordCounts } from "@/lib/sync/repositories";
-import { calculateBabyAge, formatNumber } from "@/lib/utils/format";
+import { formatNumber } from "@/lib/utils/format";
 
 interface BabySummarySectionProps {
-  babyName: string;
-  birthDate: string;
   counts: RecordCounts;
   totalDays: number;
 }
@@ -69,49 +67,16 @@ function StatCard({ icon, label, value, color }: StatCardProps) {
   );
 }
 
-interface MilestoneRowProps {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-  color: string;
-}
-
-function MilestoneRow({ icon, label, value, color }: MilestoneRowProps) {
-  return (
-    <motion.div
-      variants={item}
-      className="flex items-center gap-4 py-3"
-    >
-      <div
-        className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-        style={{ backgroundColor: `${color}15` }}
-      >
-        <span style={{ color }}>{icon}</span>
-      </div>
-      <div className="flex-1 min-w-0">
-        <span className="font-display text-sm font-medium text-text-primary block">
-          {label}
-        </span>
-      </div>
-      <span className="font-data text-sm text-text-secondary flex-shrink-0">
-        {value}
-      </span>
-    </motion.div>
-  );
-}
-
 export function BabySummarySection({
-  babyName,
-  birthDate,
   counts,
   totalDays,
 }: BabySummarySectionProps) {
-  const age = calculateBabyAge(birthDate);
   const totalRecords =
     counts.totalFeedings +
     counts.totalSleeps +
     counts.totalDiapers +
     counts.totalGrowth +
+    counts.totalMilestones +
     counts.totalVaccines;
 
   const avgFeedingsPerDay =
@@ -198,6 +163,47 @@ export function BabySummarySection({
         </motion.div>
       </Link>
 
+      <Link
+        href="/milestones"
+        className="block mb-6"
+      >
+        <motion.div
+          variants={item}
+          initial="hidden"
+          animate="show"
+          whileHover={{ scale: 1.01 }}
+          whileTap={{ scale: 0.99 }}
+          className="bg-surface-container-low rounded-2xl p-4 border border-outline-variant/10 group hover:border-primary/20 transition-all duration-300 flex items-center justify-between"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-xl flex items-center justify-center bg-[#D2B59D]/15">
+              <Sparkles className="w-4 h-4 text-[#D2B59D]" strokeWidth={1.5} />
+            </div>
+            <div>
+              <span className="font-display text-sm font-medium text-text-primary block">
+                Marcos de desenvolvimento
+              </span>
+              <span className="font-data text-[10px] text-text-disabled">
+                {formatNumber(counts.totalMilestones)} marcos registrados
+              </span>
+            </div>
+          </div>
+          <svg
+            viewBox="0 0 16 16"
+            fill="none"
+            className="w-4 h-4 text-text-disabled transition-transform duration-200 group-hover:translate-x-0.5"
+          >
+            <path
+              d="M6 4l4 4-4 4"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </motion.div>
+      </Link>
+
       <motion.div
         variants={item}
         className="bg-surface-container-low rounded-2xl p-4 border border-outline-variant/10 mb-4"
@@ -240,25 +246,19 @@ export function BabySummarySection({
         variants={item}
         className="bg-surface-container-low rounded-2xl p-4 border border-outline-variant/10"
       >
-        <div className="flex items-center gap-2 mb-2">
+        <div className="flex items-center gap-2 mb-4">
           <CalendarHeart className="w-4 h-4 text-text-secondary" strokeWidth={1.5} />
           <span className="font-display text-sm font-medium text-text-primary">
             Linha do tempo
           </span>
         </div>
-        <div className="flex flex-col divide-y divide-surface-variant/10">
-          <MilestoneRow
-            icon={<Baby className="w-5 h-5" strokeWidth={1.5} />}
-            label={babyName}
-            value={age}
-            color="#8EAF96"
-          />
-          <MilestoneRow
-            icon={<CalendarHeart className="w-5 h-5" strokeWidth={1.5} />}
-            label="Dias juntos"
-            value={`${formatNumber(totalDays)} dias`}
-            color="#D2B59D"
-          />
+        <div className="flex items-center justify-between">
+          <span className="font-data text-xs text-text-disabled uppercase tracking-wider">
+            Dias juntos
+          </span>
+          <span className="font-data text-sm text-text-primary font-medium">
+            {formatNumber(totalDays)} dias
+          </span>
         </div>
       </motion.div>
     </motion.div>

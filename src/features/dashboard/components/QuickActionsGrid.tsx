@@ -2,7 +2,15 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Baby, Droplet, Moon, Ruler, Syringe, Stethoscope } from "lucide-react";
+import {
+  Baby,
+  Droplet,
+  Moon,
+  Ruler,
+  Syringe,
+  Stethoscope,
+  Thermometer,
+} from "lucide-react";
 import { DiaperRegistrySheet } from "./DiaperRegistrySheet";
 import { FeedingRegistrySheet } from "./FeedingRegistrySheet";
 import { GrowthRegistrySheet } from "./GrowthRegistrySheet";
@@ -84,6 +92,13 @@ export function QuickActionsGrid({ onSaved }: QuickActionsGridProps) {
       color: "bg-[#88AFC7]/10 text-[#88AFC7]",
       onClick: () => router.push("/dashboard/consultas"),
     },
+    {
+      title: "Sintomas",
+      subtitle: "SAUDE",
+      icon: Thermometer,
+      color: "bg-[#CD8282]/10 text-[#CD8282]",
+      onClick: () => router.push("/dashboard/sintomas"),
+    },
   ];
 
   return (
@@ -94,15 +109,19 @@ export function QuickActionsGrid({ onSaved }: QuickActionsGridProps) {
         animate="show"
         className="grid grid-cols-2 gap-4 mb-10"
       >
-        {actions.map((action) => {
+        {actions.map((action, index) => {
           const Icon = action.icon;
+          const isLastOddItem =
+            actions.length % 2 !== 0 && index === actions.length - 1;
           return (
             <motion.button
               key={action.title}
               variants={item}
               onClick={action.onClick}
               whileTap={{ scale: 0.97 }}
-              className="flex flex-col items-start p-5 bg-surface-container-low rounded-3xl border border-surface-variant/30 hover:bg-surface-variant/20 transition-colors duration-200 text-left"
+              className={`flex flex-col items-start rounded-3xl border border-surface-variant/30 bg-surface-container-low p-5 text-left transition-colors duration-200 hover:bg-surface-variant/20 ${
+                isLastOddItem ? "col-span-2" : ""
+              }`}
             >
               <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-4 ${action.color}`}>
                 <Icon className="w-5 h-5" strokeWidth={2} />

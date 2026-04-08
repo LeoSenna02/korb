@@ -49,6 +49,7 @@ export function useProfileData(): UseProfileDataReturn {
     totalSleeps: 0,
     totalDiapers: 0,
     totalGrowth: 0,
+    totalMilestones: 0,
     totalVaccines: 0,
     totalAppointments: 0,
   });
@@ -69,6 +70,7 @@ export function useProfileData(): UseProfileDataReturn {
         totalSleeps: 0,
         totalDiapers: 0,
         totalGrowth: 0,
+        totalMilestones: 0,
         totalVaccines: 0,
         totalAppointments: 0,
       });

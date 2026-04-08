@@ -9,6 +9,7 @@ export * from "./sleep";
 export * from "./milestone";
 export * from "./vaccine";
 export * from "./appointment";
+export * from "./symptom";
 
 // Pass-through re-exports for read-only aggregations (no writes, no sync needed)
 export {

@@ -47,14 +47,24 @@ export const DateInput = forwardRef<HTMLDivElement, DateInputProps>(
     const [day, setDay] = useState(initial.day);
     const [month, setMonth] = useState(initial.month);
     const [year, setYear] = useState(initial.year);
+    const onChangeRef = useRef(onChange);
+    const lastEmittedValueRef = useRef<string | null>(null);
 
     const monthIndex = MONTHS.indexOf(month) + 1;
     const formattedDate = `${year}-${String(monthIndex).padStart(2, "0")}-${day}`;
 
-    // Notify parent when date changes
     useEffect(() => {
-      onChange?.(formattedDate);
-    }, [formattedDate, onChange]);
+      onChangeRef.current = onChange;
+    }, [onChange]);
+
+    useEffect(() => {
+      if (lastEmittedValueRef.current === formattedDate) {
+        return;
+      }
+
+      lastEmittedValueRef.current = formattedDate;
+      onChangeRef.current?.(formattedDate);
+    }, [formattedDate]);
 
     return (
       <div 
@@ -150,13 +160,24 @@ function ScrollWheel({ options, value, onChange, widthClass }: { options: string
 
       isInteracting.current = true;
 
-      const maxScrollTop = (options.length - 1) * ITEM_HEIGHT;
-      const nextTop = Math.min(
-        Math.max(container.scrollTop + e.deltaY, 0),
-        maxScrollTop
+      const currentIndex = Math.min(
+        Math.max(Math.round(container.scrollTop / ITEM_HEIGHT), 0),
+        options.length - 1
       );
+      const direction = e.deltaY > 0 ? 1 : e.deltaY < 0 ? -1 : 0;
+      const nextIndex = Math.min(
+        Math.max(currentIndex + direction, 0),
+        options.length - 1
+      );
+      const nextTop = nextIndex * ITEM_HEIGHT;
 
       container.scrollTop = nextTop;
+
+      const nextValue = options[nextIndex];
+      if (nextValue !== value) {
+        onChange(nextValue);
+      }
+
       scheduleFinalize();
     }
 

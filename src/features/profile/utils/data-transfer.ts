@@ -88,6 +88,7 @@ export function createImportPreview(
     totalMilestones: payload.records.milestones.length,
     totalVaccines: payload.records.vaccines.length,
     totalAppointments: payload.records.appointments.length,
+    totalSymptoms: payload.records.symptoms.length,
   };
 
   return {
@@ -101,7 +102,8 @@ export function createImportPreview(
       counts.totalGrowth +
       counts.totalMilestones +
       counts.totalVaccines +
-      counts.totalAppointments,
+      counts.totalAppointments +
+      counts.totalSymptoms,
     counts,
   };
 }

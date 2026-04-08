@@ -421,6 +421,109 @@ export type Database = {
           },
         ]
       }
+      sleep_sessions: {
+        Row: {
+          baby_id: string
+          created_at: string
+          is_paused: boolean
+          pause_started_at: string | null
+          paused_total_ms: number
+          started_at: string
+          started_by: string
+          type: string
+          updated_at: string
+          updated_by: string
+        }
+        Insert: {
+          baby_id: string
+          created_at?: string
+          is_paused?: boolean
+          pause_started_at?: string | null
+          paused_total_ms?: number
+          started_at: string
+          started_by: string
+          type: string
+          updated_at?: string
+          updated_by: string
+        }
+        Update: {
+          baby_id?: string
+          created_at?: string
+          is_paused?: boolean
+          pause_started_at?: string | null
+          paused_total_ms?: number
+          started_at?: string
+          started_by?: string
+          type?: string
+          updated_at?: string
+          updated_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sleep_sessions_baby_id_fkey"
+            columns: ["baby_id"]
+            isOneToOne: true
+            referencedRelation: "babies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      symptom_episodes: {
+        Row: {
+          baby_id: string
+          created_at: string
+          id: string
+          medication: string | null
+          notes: string | null
+          resolution_notes: string | null
+          resolved_at: string | null
+          severity: string
+          started_at: string
+          status: string
+          symptoms: string[]
+          temperature_c: number | null
+          updated_at: string
+        }
+        Insert: {
+          baby_id: string
+          created_at?: string
+          id: string
+          medication?: string | null
+          notes?: string | null
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          severity: string
+          started_at: string
+          status: string
+          symptoms?: string[]
+          temperature_c?: number | null
+          updated_at?: string
+        }
+        Update: {
+          baby_id?: string
+          created_at?: string
+          id?: string
+          medication?: string | null
+          notes?: string | null
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          severity?: string
+          started_at?: string
+          status?: string
+          symptoms?: string[]
+          temperature_c?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "symptom_episodes_baby_id_fkey"
+            columns: ["baby_id"]
+            isOneToOne: false
+            referencedRelation: "babies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vaccines: {
         Row: {
           applied_date: string | null
@@ -497,6 +600,26 @@ export type Database = {
       is_caregiver: { Args: { p_baby_id: string }; Returns: boolean }
       join_family_with_code: {
         Args: { p_code: string; p_user_id: string }
+        Returns: Json
+      }
+      start_sleep_session: {
+        Args: { p_baby_id: string; p_type: string }
+        Returns: Json
+      }
+      pause_sleep_session: {
+        Args: { p_baby_id: string }
+        Returns: Json
+      }
+      resume_sleep_session: {
+        Args: { p_baby_id: string }
+        Returns: Json
+      }
+      cancel_sleep_session: {
+        Args: { p_baby_id: string }
+        Returns: Json
+      }
+      complete_sleep_session: {
+        Args: { p_baby_id: string; p_notes?: string | null }
         Returns: Json
       }
     }

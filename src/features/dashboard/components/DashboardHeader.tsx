@@ -5,7 +5,6 @@ import { BrandLogo } from "@/components/branding/BrandLogo";
 
 interface DashboardHeaderProps {
   userName: string;
-  babyAgeTag: string;
 }
 
 function getGreetingState() {
@@ -31,7 +30,7 @@ function getGreetingState() {
   };
 }
 
-export function DashboardHeader({ userName, babyAgeTag }: DashboardHeaderProps) {
+export function DashboardHeader({ userName }: DashboardHeaderProps) {
   const { greeting, GreetingIcon } = getGreetingState();
 
   return (
@@ -45,11 +44,6 @@ export function DashboardHeader({ userName, babyAgeTag }: DashboardHeaderProps) 
           {greeting}, {userName}{" "}
           <GreetingIcon className="w-8 h-8 text-[#FFC107] drop-shadow-sm" fill="#FFC107" />
         </h1>
-        <div className="inline-flex items-center rounded-full border border-primary/20 bg-primary-container/10 px-4 py-1.5">
-          <span className="font-data text-xs font-medium tracking-wide text-primary">
-            {babyAgeTag}
-          </span>
-        </div>
       </div>
     </header>
   );

@@ -353,6 +353,14 @@ export function useDataManagement({
         throw deleteAppointments.error;
       }
 
+      const deleteSymptoms = await supabase
+        .from("symptom_episodes" as never)
+        .delete()
+        .eq("baby_id" as never, baby.id);
+      if (deleteSymptoms.error) {
+        throw deleteSymptoms.error;
+      }
+
       const deleteOperations = await Promise.all([
         supabase.from("feedings").delete().eq("baby_id", baby.id),
         supabase.from("diapers").delete().eq("baby_id", baby.id),

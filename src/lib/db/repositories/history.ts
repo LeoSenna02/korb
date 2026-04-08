@@ -3,14 +3,17 @@ import type {
   DiaperRecord,
   SleepRecord,
   GrowthRecord,
+  SymptomEpisode,
   PediatricAppointment,
 } from "../types";
 import type { HistoryActivity, WeeklyStat } from "@/features/history/types";
+import { getSymptomLabel } from "@/features/symptoms/constants";
 import { getAppointmentsByBabyId, getRecentAttendedAppointments } from "./appointment";
 import { getFeedingsByBabyId, getRecentFeedings } from "./feeding";
 import { getDiapersByBabyId, getRecentDiapers } from "./diaper";
 import { getSleepsByBabyId, getRecentSleeps } from "./sleep";
 import { getGrowthByBabyId, getRecentGrowthRecords } from "./growth";
+import { getRecentSymptomEpisodes, getSymptomEpisodesByBabyId } from "./symptom";
 import { getReportFeedings, getReportSleeps, getReportDiapers } from "./reports";
 import { formatDate, formatTime, formatDuration, formatDurationFromDates } from "@/lib/utils/format";
 
@@ -109,6 +112,25 @@ function formatGrowthActivity(r: GrowthRecord): HistoryActivity {
   };
 }
 
+function formatSymptomActivity(r: SymptomEpisode): HistoryActivity {
+  const isResolved = r.status === "resolved";
+  const activityDate = r.resolvedAt ?? r.startedAt;
+  const details = [
+    r.symptoms.map(getSymptomLabel).join(" • "),
+    isResolved ? "Resolvido" : "Em acompanhamento",
+  ].join(" — ");
+
+  return {
+    id: r.id,
+    type: "sintomas",
+    title: isResolved ? "Sintomas resolvidos" : "Sintomas em acompanhamento",
+    details,
+    date: formatDate(activityDate),
+    time: formatTime(activityDate),
+    sortKey: activityDate,
+  };
+}
+
 function formatAppointmentActivity(r: PediatricAppointment): HistoryActivity {
   return {
     id: r.id,
@@ -124,11 +146,13 @@ function formatAppointmentActivity(r: PediatricAppointment): HistoryActivity {
 export async function getAllActivitiesForHistory(
   babyId: string
 ): Promise<HistoryActivity[]> {
-  const [feedings, diapers, sleeps, growth, appointments] = await Promise.all([
+  const [feedings, diapers, sleeps, growth, symptoms, appointments] =
+    await Promise.all([
     getFeedingsByBabyId(babyId),
     getDiapersByBabyId(babyId),
     getSleepsByBabyId(babyId),
     getGrowthByBabyId(babyId),
+    getSymptomEpisodesByBabyId(babyId),
     getAppointmentsByBabyId(babyId),
   ]);
 
@@ -137,6 +161,7 @@ export async function getAllActivitiesForHistory(
     ...diapers.map(formatDiaperActivity),
     ...sleeps.map(formatSleepActivity),
     ...growth.map(formatGrowthActivity),
+    ...symptoms.map(formatSymptomActivity),
     ...appointments
       .filter((appointment) => appointment.status === "attended")
       .map(formatAppointmentActivity),
@@ -154,11 +179,13 @@ export async function getHistoryPage(
 ): Promise<HistoryPageResult> {
   const fetchCount = Math.max(limit + offset, limit);
 
-  const [feedings, diapers, sleeps, growth, appointments] = await Promise.all([
+  const [feedings, diapers, sleeps, growth, symptoms, appointments] =
+    await Promise.all([
     getRecentFeedings(babyId, fetchCount),
     getRecentDiapers(babyId, fetchCount),
     getRecentSleeps(babyId, fetchCount),
     getRecentGrowthRecords(babyId, fetchCount),
+    getRecentSymptomEpisodes(babyId, fetchCount),
     getRecentAttendedAppointments(babyId, fetchCount),
   ]);
 
@@ -167,6 +194,7 @@ export async function getHistoryPage(
     ...diapers.map(formatDiaperActivity),
     ...sleeps.map(formatSleepActivity),
     ...growth.map(formatGrowthActivity),
+    ...symptoms.map(formatSymptomActivity),
     ...appointments.map(formatAppointmentActivity),
   ];
 

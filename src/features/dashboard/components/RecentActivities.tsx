@@ -2,36 +2,45 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Droplet, Baby, Ruler, Stethoscope } from "lucide-react";
+import { Droplet, Baby, Moon, Ruler, Stethoscope, Thermometer } from "lucide-react";
 import Link from "next/link";
 import { useBaby } from "@/contexts/BabyContext";
 import { getRecentActivities } from "@/lib/sync/repositories";
 import { subscribeToDataSync } from "@/lib/sync/events";
 import { loadViewCache, readViewCache } from "@/lib/cache/view-cache";
 import type { ActivityRecord } from "@/lib/db/types";
-import { timeAgo } from "@/lib/utils/format";
+import { formatDurationFromDates, timeAgo } from "@/lib/utils/format";
+import { getSymptomLabel } from "@/features/symptoms/constants";
 
 interface DisplayActivity {
   id: string;
-  type: "fralda" | "mamada" | "crescimento" | "consulta";
+  type: "fralda" | "mamada" | "sono" | "crescimento" | "consulta" | "sintomas";
   title: string;
   details: string;
   timeAgo: string;
   rawDate: string;
 }
 
+function assertUnreachable(value: never): never {
+  throw new Error(`Unsupported activity type: ${JSON.stringify(value)}`);
+}
+
 const iconsMap: Record<DisplayActivity["type"], React.ElementType> = {
   fralda: Droplet,
   mamada: Baby,
+  sono: Moon,
   crescimento: Ruler,
   consulta: Stethoscope,
+  sintomas: Thermometer,
 };
 
 const iconColorMap: Record<DisplayActivity["type"], string> = {
   fralda: "text-[#D2B59D]",
   mamada: "text-[#8EAF96]",
+  sono: "text-[#B48EAD]",
   crescimento: "text-text-primary",
   consulta: "text-[#88AFC7]",
+  sintomas: "text-[#CD8282]",
 };
 
 function formatActivity(record: ActivityRecord): DisplayActivity {
@@ -72,6 +81,25 @@ function formatActivity(record: ActivityRecord): DisplayActivity {
         rawDate: record.startedAt,
       };
     }
+    case "sleep": {
+      const title = record.type === "night" ? "Sono noturno" : "Soneca";
+      const duration = record.endedAt
+        ? formatDurationFromDates(record.startedAt, record.endedAt)
+        : "Em andamento";
+      const details = record.notes
+        ? `${duration} • ${record.notes}`
+        : duration;
+      const referenceDate = record.endedAt ?? record.startedAt;
+
+      return {
+        id: record.id,
+        type: "sono",
+        title,
+        details,
+        timeAgo: timeAgo(referenceDate),
+        rawDate: referenceDate,
+      };
+    }
     case "growth": {
       const parts: string[] = [];
       if (record.weightKg) parts.push(`${record.weightKg} kg`);
@@ -95,17 +123,20 @@ function formatActivity(record: ActivityRecord): DisplayActivity {
         rawDate: record.attendedAt ?? record.scheduledAt,
       };
     }
-    default: {
+    case "symptom": {
+      const isResolved = record.status === "resolved";
       return {
         id: record.id,
-        type: "mamada" as const,
-        title: "Atividade",
-        details: "",
-        timeAgo: "",
-        rawDate: "",
+        type: "sintomas",
+        title: isResolved ? "Sintomas resolvidos" : "Sintomas em acompanhamento",
+        details: record.symptoms.map(getSymptomLabel).join(" • "),
+        timeAgo: timeAgo(record.resolvedAt ?? record.startedAt),
+        rawDate: record.resolvedAt ?? record.startedAt,
       };
     }
   }
+
+  return assertUnreachable(record);
 }
 
 const EMPTY_ACTIVITIES: DisplayActivity[] = [

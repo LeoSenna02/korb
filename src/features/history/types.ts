@@ -3,6 +3,7 @@ export type ActivityType =
   | "fralda"
   | "sono"
   | "crescimento"
+  | "sintomas"
   | "consulta";
 
 export interface HistoryActivity {
@@ -31,6 +32,7 @@ export type HistoryFilter =
   | "fralda"
   | "sono"
   | "crescimento"
+  | "sintomas"
   | "consulta";
 
 export interface WeeklyStat {

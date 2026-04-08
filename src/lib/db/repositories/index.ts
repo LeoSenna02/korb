@@ -42,6 +42,16 @@ export {
   getRecentAttendedAppointments,
   getAppointmentLinkSuggestions,
 } from "./appointment";
+export {
+  saveSymptomEpisode,
+  updateSymptomEpisode,
+  resolveSymptomEpisode,
+  deleteSymptomEpisode,
+  getSymptomEpisodesByBabyId,
+  getActiveSymptomEpisodes,
+  getResolvedSymptomEpisodes,
+  getRecentSymptomEpisodes,
+} from "./symptom";
 export { getRecentActivities } from "./activity";
 export { getReportFeedings, getReportSleeps, getReportDiapers, getReportGrowth } from "./reports";
 export {
