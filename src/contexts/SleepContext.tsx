@@ -5,6 +5,7 @@ import React,
     createContext,
     useCallback,
     useMemo,
+    useRef,
     useState,
   } from "react";
 import { useBaby } from "./BabyContext";
@@ -39,53 +40,122 @@ interface SleepProviderProps {
   children: React.ReactNode;
 }
 
+function createOptimisticSleepSession(params: {
+  babyId: string;
+  type: SleepType;
+  previousSession: SleepSessionActionResult["session"];
+}): SleepSessionActionResult["session"] {
+  const now = new Date().toISOString();
+  const fallbackUserId =
+    params.previousSession?.updatedBy ??
+    params.previousSession?.startedBy ??
+    "local-user";
+
+  return {
+    babyId: params.babyId,
+    type: params.type,
+    startedAt: now,
+    isPaused: false,
+    pausedTotalMs: 0,
+    startedBy: params.previousSession?.startedBy ?? fallbackUserId,
+    updatedBy: fallbackUserId,
+    createdAt: now,
+    updatedAt: now,
+  };
+}
+
 export function SleepProvider({ children }: SleepProviderProps) {
   const { baby } = useBaby();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const mutationIdRef = useRef(0);
   const { session, elapsedSeconds, applySession, clearSession, refreshSession } =
     useSharedSleepSession(baby?.id ?? null);
+
+  const getActionErrorMessage = useCallback(() => {
+    if (!baby) {
+      return "Selecione um bebe para registrar o sono.";
+    }
+
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      return "Conecte-se a internet para compartilhar o timer de sono.";
+    }
+
+    return null;
+  }, [baby]);
 
   const runSleepAction = useCallback(
     async (
       action: () => Promise<SleepSessionActionResult>,
-      onSuccess?: (result: SleepSessionActionResult) => void
+      options?: {
+        onSuccess?: (result: SleepSessionActionResult) => void;
+        optimisticUpdate?: () => void;
+        rollback?: () => void;
+      }
     ) => {
-      if (!baby) {
-        const message = "Selecione um bebe para registrar o sono.";
-        setErrorMessage(message);
-        throw new Error(message);
+      const preconditionError = getActionErrorMessage();
+      if (preconditionError) {
+        setErrorMessage(preconditionError);
+        throw new Error(preconditionError);
       }
 
-      if (typeof navigator !== "undefined" && !navigator.onLine) {
-        const message = "Conecte-se a internet para compartilhar o timer de sono.";
-        setErrorMessage(message);
-        throw new Error(message);
-      }
+      const mutationId = ++mutationIdRef.current;
+      let handledFailure = false;
 
+      options?.optimisticUpdate?.();
       setErrorMessage(null);
 
-      const result = await action();
-      if (!result.success) {
-        const message = result.message ?? "Erro ao atualizar a sessao de sono.";
-        setErrorMessage(message);
+      try {
+        const result = await action();
+        if (!result.success) {
+          handledFailure = true;
+          const message = result.message ?? "Erro ao atualizar a sessao de sono.";
 
-        if (result.errorCode === "NO_ACTIVE_SESSION") {
-          clearSession();
-          await refreshSession();
+          if (mutationId === mutationIdRef.current) {
+            setErrorMessage(message);
+
+            if (result.errorCode === "NO_ACTIVE_SESSION") {
+              clearSession();
+              await refreshSession();
+            } else {
+              options?.rollback?.();
+            }
+          }
+
+          throw new Error(message);
         }
 
-        throw new Error(message);
-      }
+        if (mutationId !== mutationIdRef.current) {
+          return;
+        }
 
-      if (result.session) {
-        applySession(result.session);
-      } else {
-        clearSession();
-      }
+        if (result.session) {
+          applySession(result.session);
+        } else {
+          clearSession();
+        }
 
-      onSuccess?.(result);
+        options?.onSuccess?.(result);
+      } catch (error) {
+        if (!handledFailure && mutationId === mutationIdRef.current) {
+          options?.rollback?.();
+        }
+
+        throw error;
+      }
     },
-    [applySession, baby, clearSession, refreshSession]
+    [applySession, clearSession, getActionErrorMessage, refreshSession]
+  );
+
+  const restoreSession = useCallback(
+    (previousSession: SleepSessionActionResult["session"]) => {
+      if (previousSession) {
+        applySession(previousSession);
+        return;
+      }
+
+      clearSession();
+    },
+    [applySession, clearSession]
   );
 
   const startSleep = useCallback((type: SleepType = "nap") => {
@@ -94,13 +164,25 @@ export function SleepProvider({ children }: SleepProviderProps) {
       return;
     }
 
-    void runSleepAction(() =>
-      startSleepSessionAction({
-        babyId: baby.id,
-        type,
-      })
+    const previousSession = session;
+    const optimisticSession = createOptimisticSleepSession({
+      babyId: baby.id,
+      type,
+      previousSession,
+    });
+
+    void runSleepAction(
+      () =>
+        startSleepSessionAction({
+          babyId: baby.id,
+          type,
+        }),
+      {
+        optimisticUpdate: () => applySession(optimisticSession),
+        rollback: () => restoreSession(previousSession),
+      }
     ).catch(() => undefined);
-  }, [baby, runSleepAction]);
+  }, [applySession, baby, restoreSession, runSleepAction, session]);
 
   const pauseSleep = useCallback(() => {
     if (!baby) {
@@ -108,12 +190,30 @@ export function SleepProvider({ children }: SleepProviderProps) {
       return;
     }
 
-    void runSleepAction(() =>
-      pauseSleepSessionAction({
-        babyId: baby.id,
-      })
+    if (!session || session.isPaused) {
+      return;
+    }
+
+    const previousSession = session;
+    const pausedAt = new Date().toISOString();
+
+    void runSleepAction(
+      () =>
+        pauseSleepSessionAction({
+          babyId: baby.id,
+        }),
+      {
+        optimisticUpdate: () =>
+          applySession({
+            ...previousSession,
+            isPaused: true,
+            pauseStartedAt: pausedAt,
+            updatedAt: pausedAt,
+          }),
+        rollback: () => restoreSession(previousSession),
+      }
     ).catch(() => undefined);
-  }, [baby, runSleepAction]);
+  }, [applySession, baby, restoreSession, runSleepAction, session]);
 
   const resumeSleep = useCallback(() => {
     if (!baby) {
@@ -121,12 +221,36 @@ export function SleepProvider({ children }: SleepProviderProps) {
       return;
     }
 
-    void runSleepAction(() =>
-      resumeSleepSessionAction({
-        babyId: baby.id,
-      })
+    if (!session || !session.isPaused) {
+      return;
+    }
+
+    const previousSession = session;
+    const resumedAtMs = Date.now();
+    const resumedAt = new Date(resumedAtMs).toISOString();
+    const pauseStartedAtMs = previousSession.pauseStartedAt
+      ? new Date(previousSession.pauseStartedAt).getTime()
+      : resumedAtMs;
+    const additionalPausedMs = Math.max(0, resumedAtMs - pauseStartedAtMs);
+
+    void runSleepAction(
+      () =>
+        resumeSleepSessionAction({
+          babyId: baby.id,
+        }),
+      {
+        optimisticUpdate: () =>
+          applySession({
+            ...previousSession,
+            isPaused: false,
+            pauseStartedAt: undefined,
+            pausedTotalMs: previousSession.pausedTotalMs + additionalPausedMs,
+            updatedAt: resumedAt,
+          }),
+        rollback: () => restoreSession(previousSession),
+      }
     ).catch(() => undefined);
-  }, [baby, runSleepAction]);
+  }, [applySession, baby, restoreSession, runSleepAction, session]);
 
   const stopSleep = useCallback(() => {
     if (!baby) {
@@ -134,12 +258,19 @@ export function SleepProvider({ children }: SleepProviderProps) {
       return;
     }
 
-    void runSleepAction(() =>
-      cancelSleepSessionAction({
-        babyId: baby.id,
-      })
+    const previousSession = session;
+
+    void runSleepAction(
+      () =>
+        cancelSleepSessionAction({
+          babyId: baby.id,
+        }),
+      {
+        optimisticUpdate: () => clearSession(),
+        rollback: () => restoreSession(previousSession),
+      }
     ).catch(() => undefined);
-  }, [baby, runSleepAction]);
+  }, [baby, clearSession, restoreSession, runSleepAction, session]);
 
   const endSleep = useCallback(
     async (notes?: string) => {
@@ -149,14 +280,21 @@ export function SleepProvider({ children }: SleepProviderProps) {
         throw new Error(message);
       }
 
-      await runSleepAction(() =>
-        completeSleepSessionAction({
-          babyId: baby.id,
-          notes,
-        })
+      const previousSession = session;
+
+      await runSleepAction(
+        () =>
+          completeSleepSessionAction({
+            babyId: baby.id,
+            notes,
+          }),
+        {
+          optimisticUpdate: () => clearSession(),
+          rollback: () => restoreSession(previousSession),
+        }
       );
     },
-    [baby, runSleepAction]
+    [baby, clearSession, restoreSession, runSleepAction, session]
   );
 
   const value = useMemo<SleepContextValue>(
