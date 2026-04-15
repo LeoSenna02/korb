@@ -44,17 +44,35 @@ function getElapsedSeconds(session: ActiveSleepSession, nowMs: number): number {
   return Math.max(0, Math.floor(elapsedMs / 1000));
 }
 
+function getNextElapsedSecondDelay(session: ActiveSleepSession, nowMs: number): number {
+  const startedAtMs = new Date(session.startedAt).getTime();
+  if (!Number.isFinite(startedAtMs)) {
+    return 1000;
+  }
+
+  const elapsedMs = Math.max(0, nowMs - startedAtMs - session.pausedTotalMs);
+  const remainder = elapsedMs % 1000;
+  return remainder === 0 ? 1000 : 1000 - remainder;
+}
+
 export function useSharedSleepSession(
   babyId: string | null
 ): UseSharedSleepSessionReturn {
   const supabase = useMemo(() => createClient(), []);
   const [session, setSession] = useState<ActiveSleepSession | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [nowMs, setNowMs] = useState(Date.now());
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+
+  const syncElapsedTime = useCallback((nextSession: ActiveSleepSession | null) => {
+    setElapsedSeconds(
+      nextSession ? getElapsedSeconds(nextSession, Date.now()) : 0
+    );
+  }, []);
 
   const refreshSession = useCallback(async () => {
     if (!babyId) {
       setSession(null);
+      setElapsedSeconds(0);
       setIsLoading(false);
       return;
     }
@@ -71,25 +89,27 @@ export function useSharedSleepSession(
       if (error) {
         console.warn("[useSharedSleepSession] Failed to fetch session:", error);
         setSession(null);
+        setElapsedSeconds(0);
         return;
       }
 
-      setSession(data ? mapSessionRow(data) : null);
+      const nextSession = data ? mapSessionRow(data) : null;
+      setSession(nextSession);
+      syncElapsedTime(nextSession);
     } finally {
       setIsLoading(false);
-      setNowMs(Date.now());
     }
-  }, [babyId, supabase]);
+  }, [babyId, supabase, syncElapsedTime]);
 
   const applySession = useCallback((nextSession: ActiveSleepSession | null) => {
     setSession(nextSession);
-    setNowMs(Date.now());
+    syncElapsedTime(nextSession);
     setIsLoading(false);
-  }, []);
+  }, [syncElapsedTime]);
 
   const clearSession = useCallback(() => {
     setSession(null);
-    setNowMs(Date.now());
+    setElapsedSeconds(0);
     setIsLoading(false);
   }, []);
 
@@ -110,42 +130,49 @@ export function useSharedSleepSession(
       .subscribe();
 
     const handleRefresh = () => {
+      if (document.visibilityState === "hidden") {
+        return;
+      }
+
       void refreshSession();
     };
 
     window.addEventListener("focus", handleRefresh);
+    window.addEventListener("pageshow", handleRefresh);
     window.addEventListener("online", handleRefresh);
+    document.addEventListener("visibilitychange", handleRefresh);
 
     return () => {
       window.removeEventListener("focus", handleRefresh);
+      window.removeEventListener("pageshow", handleRefresh);
       window.removeEventListener("online", handleRefresh);
+      document.removeEventListener("visibilitychange", handleRefresh);
       void supabase.removeChannel(channel);
     };
   }, [babyId, refreshSession, supabase]);
 
   useEffect(() => {
-    setNowMs(Date.now());
+    syncElapsedTime(session);
 
     if (!session || session.isPaused) {
       return;
     }
 
-    const intervalId = window.setInterval(() => {
-      setNowMs(Date.now());
-    }, 1000);
+    let intervalId: number | null = null;
+    const timeoutId = window.setTimeout(() => {
+      syncElapsedTime(session);
+      intervalId = window.setInterval(() => {
+        syncElapsedTime(session);
+      }, 1000);
+    }, getNextElapsedSecondDelay(session, Date.now()));
 
     return () => {
-      window.clearInterval(intervalId);
+      window.clearTimeout(timeoutId);
+      if (intervalId !== null) {
+        window.clearInterval(intervalId);
+      }
     };
-  }, [session]);
-
-  const elapsedSeconds = useMemo(() => {
-    if (!session) {
-      return 0;
-    }
-
-    return getElapsedSeconds(session, nowMs);
-  }, [session, nowMs]);
+  }, [session, syncElapsedTime]);
 
   return {
     session,
